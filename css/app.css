@@ -547,3 +547,32 @@ button#plVis.on{border-color:rgba(255,211,77,.7);background:rgba(255,211,77,.18)
  #paperSheet, #paperSheet *{visibility:visible}
  #paperSheet{position:absolute;left:0;top:0;width:auto;background:#f6efd9 !important;color:#1a160e !important}
 }
+
+/* v8: more options */
+.v8acts{margin-top:10px;padding-top:8px;border-top:1px solid rgba(255,255,255,.08)}
+.xmkt{margin:8px 0;padding:8px;border-radius:10px;background:rgba(8,16,36,.4)}
+.xmkt .row.wrap,.row.wrap{flex-wrap:wrap;gap:6px}
+.slipbox{margin-top:8px;padding:8px;border-radius:10px;background:rgba(255,211,77,.08);border:1px solid rgba(255,211,77,.25)}
+.chal-fab{position:absolute;left:10px;right:10px;bottom:92px;z-index:4;width:auto}
+.tacrow .tseg{flex-wrap:wrap}
+@media (max-width:430px){
+ .tacrow{flex-direction:column;align-items:flex-start;gap:4px}
+ .tacrow .tl{margin-bottom:2px}
+ .tseg button{padding:5px 7px;font-size:11px}
+ .xmkt .btn{font-size:11px;padding:5px 8px}
+ .v8acts{padding-bottom:4px}
+}
+@media (max-height:700px){
+ .chal-fab{bottom:86px;padding:6px 8px;font-size:12px}
+}
+
+.tabs{flex-wrap:wrap}
+.tabs button{min-width:18%;flex:1 1 18%}
+@media (max-width:430px){
+ .tabs button{font-size:11px !important;min-width:30%;flex:1 1 30%;padding:6px 3px}
+ .tabs button .tiny{font-size:9px}
+}
+.press-as{display:flex;flex-direction:column;gap:6px}
+.press-a{text-align:left;white-space:normal;line-height:1.35;padding:8px 10px}
+.shop{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid rgba(255,255,255,.07)}
+.shop .si{font-size:22px;width:32px;text-align:center}
