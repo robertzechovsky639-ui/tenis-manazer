@@ -1980,6 +1980,7 @@ function openMatch(o){const me=o.me||ME();let m;
  Object.assign(MS,{m,o,paused:false,abort:false,skip:false,speed:UI.speed,pos:[[30,380],[-30,-18]],ended:false,trail:[],coachShown:0});
  const wrap=document.createElement('div');wrap.className='mv-wrap';wrap.id='mv';
  wrap.innerHTML=`<div class="mview s-${o.surf}">
+ <div class="mbody">
  <div class="tvsb" id="sb"></div>
  ${crowdLine(m)}
  <div class="court-wrap">${courtSVG(o.surf)}<div class="callout" id="callout"></div><div class="spdbox" id="spdbox"></div><div class="hawk" id="hawk"></div><div class="rally">VÝMĚNA<b id="rallyN">0</b></div><div class="lower3" id="l3"></div></div>
@@ -1989,14 +1990,18 @@ function openMatch(o){const me=o.me||ME();let m;
  <div class="betchat" id="betchat"></div>
  <div class="matchopts"><button class="btn ghost sm plvis" id="plVis" onclick="toggleShowPlayers()" title="Zobrazit hráče">Zobrazit hráče <b id="plVisT">vypnuto</b></button>${typeof showLiveMarkets==='function'?`<button class="btn ghost sm" onclick="showLiveMarkets()">📡 Živé sázky</button>`:''}</div>
  <div class="mbars"><div>⚡ ${esc(shortName(me))} <b id="enMeT"></b><div class="bar en"><i id="enMe"></i></div></div><div>⚡ ${esc(shortName(m.p[1]))} <b id="enOpT"></b><div class="bar en"><i id="enOp"></i></div></div></div>
+ </div>
+ <div class="mfoot">
  <div class="cards" id="cards"></div>
  <div class="mctrl">
  <div class="mctrl-row"><div class="seg-t" id="tac">${Object.entries(TACTICS).map(([k,t])=>`<button data-k="${k}" onclick="setTactic('${k}')" title="${t.name}">${t.icon}</button>`).join('')}</div>
  <button class="btn ghost sm" onclick="openTacSheet()" title="Taktika">📋</button><button class="btn ghost sm" onclick="openTacSheet(true)" title="Trenér">🧑‍🏫</button><button class="btn ghost sm retb" id="retB" onclick="confirmPlayerRetire()" title="Skrečovat zápas">🏳️</button></div>
  <div class="mctrl-row"><div class="seg-t" id="spd">${[[1,'1×'],[2,'2×'],[4,'4×'],[8,'8×'],[99,'⚡']].map(s=>`<button data-s="${s[0]}" onclick="setSpeed(${s[0]})">${s[1]}</button>`).join('')}</div>
  <button class="btn ghost sm" id="pauseB" onclick="togglePause()">⏸</button><button class="btn ghost sm" onclick="skipMatch()" title="Dosimulovat">⏭</button><button class="btn ghost sm" onclick="statsPopup()">📊</button></div></div>
+ </div>
  <div class="sheet" id="sheet"></div></div>`;
  document.body.appendChild(wrap);
+ watchMatchLayout();
  fitCourt();$('#pl0').innerHTML=figureSVG(me,true);$('#pl1').innerHTML=figureSVG(m.p[1],false);
  placePlayers(0);if(typeof applyShowPlayers==='function')applyShowPlayers();if(typeof ensureOwnMatchMarket==='function')ensureOwnMatchMarket(m,o.ev);updateScore();updateBars();renderCards();setTactic(m.tac[0].rally,true);setSpeed(MS.speed,true);placeBallAtServer();
  if(o.restore)setComm('▶ Pokračuješ v rozehraném zápase.');
@@ -2187,7 +2192,53 @@ function endMatchUI(){if(MS.ended)return;MS.ended=true;const m=MS.m;updateScore(
  const retTxt=m.ret!=null?`<div class="small warn">${m.ret===0?'Skrečoval jsi':'Soupeř skrečoval'}</div>`:'';
  const bg=modal(`<div class="c"><div style="font-size:44px">${won?'🏆':'😤'}</div><h2 style="margin:4px 0;color:${won?'#3ee68a':'#ff5d73'}">${won?'VÍTĚZSTVÍ':'PROHRA'}</h2><div class="b" style="font-size:20px;letter-spacing:.04em">${m.scoreText(0)}${m.ret!=null?' skr.':''}</div>${retTxt}<div class="small mut">vs ${flag(m.p[1].cc)} ${esc(m.p[1].n)}</div></div><div style="margin:10px 0">${extra}</div>${tacReview(m)}${statsTable(m)}<button class="btn big gold" style="margin-top:14px" id="endc">Pokračovat</button>`,true);
  bg.style.zIndex=120;$('#endc').onclick=()=>{closeModal();if(MS.o&&MS.o.kind==='event'&&typeof startPress==='function')startPress('post',()=>closeMatch());else closeMatch();};}
-function closeMatch(){MS.abort=true;const w=$('#mv');if(w)w.remove();const after=MS.o&&MS.o.after;if(after)after();else render();}
+function closeMatch(){MS.abort=true;if(window.__mfootRO){try{window.__mfootRO.disconnect();}catch(e){}window.__mfootRO=null;}const w=$('#mv');if(w)w.remove();const after=MS.o&&MS.o.after;if(after)after();else render();}
+function syncAppViewport(){
+ try{
+  const vv=window.visualViewport;
+  const h=Math.max(1,Math.round((vv&&vv.height)?vv.height:window.innerHeight));
+  const top=Math.max(0,Math.round((vv&&vv.offsetTop)?vv.offsetTop:0));
+  const root=document.documentElement;
+  root.style.setProperty('--app-vh',h+'px');
+  root.style.setProperty('--app-vtop',top+'px');
+ }catch(e){}
+}
+function layoutMatchChrome(){
+ syncAppViewport();
+ const foot=document.querySelector('#mv .mfoot');
+ if(foot){
+  const h=Math.ceil(foot.getBoundingClientRect().height);
+  document.documentElement.style.setProperty('--mfoot-h',h+'px');
+ }
+ if(typeof fitCourt==='function'&&document.getElementById('court'))fitCourt();
+}
+function watchAppViewport(){
+ if(window.__appVv)return;
+ window.__appVv=1;
+ syncAppViewport();
+ const fn=function(){syncAppViewport();if(document.getElementById('mv'))layoutMatchChrome();};
+ window.addEventListener('resize',fn);
+ window.addEventListener('orientationchange',fn);
+ if(window.visualViewport){
+  window.visualViewport.addEventListener('resize',fn);
+  window.visualViewport.addEventListener('scroll',fn);
+ }
+}
+function watchMatchLayout(){
+ watchAppViewport();
+ layoutMatchChrome();
+ const foot=document.querySelector('#mv .mfoot');
+ if(foot&&typeof ResizeObserver==='function'){
+  if(window.__mfootRO){try{window.__mfootRO.disconnect();}catch(e){}}
+  window.__mfootRO=new ResizeObserver(function(){layoutMatchChrome();});
+  window.__mfootRO.observe(foot);
+ }
+}
+if(typeof window!=='undefined'){
+ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',watchAppViewport);
+ else watchAppViewport();
+}
+
 function crowdLine(m){if(!m.crowd)return '';const c=m.crowd;if(c[0]===c[1])return '';const mine=c[0]>c[1];return `<div class="tiny ${mine?'good':'warn'}" style="padding:2px 12px 0">📣 Publikum fandí ${mine?'tobě':esc(shortName(m.p[1]))}${m.p[mine?0:1].cc===m.o.cc?' (domácí kurt)':''}</div>`;}
 function crowdBox(me,o,ev){const a=(me.cc===ev.cc?0.012:0)+popOf(me)*0.00011,b=(o.cc===ev.cc?0.012:0)+popOf(o)*0.00011;const mine=a>=b;
  return `<div class="row small" style="margin-top:8px;gap:8px"><span>📣</span><span style="flex:1">Publikum: ${Math.abs(a-b)<0.002?'vyrovnané':mine?'<b class="good">fandí tobě</b>':`<b class="warn">fandí soupeři</b>`}${me.cc===ev.cc?' · 🏠 domácí turnaj':''}</span><span class="tiny mut">❤️ ${Math.round(popOf(me))} vs ${Math.round(popOf(o))}</span></div>`;}
