@@ -622,3 +622,41 @@ button#plVis.on{border-color:rgba(255,211,77,.7);background:rgba(255,211,77,.18)
  .hlreel{font-size:13px}
  .qopts .btn{font-size:11px;padding:5px 8px}
 }
+
+/* v11 */
+.ptsb,.umpl{padding:3px 10px 4px;font-size:10px}
+.ptsb{background:rgba(255,211,77,.1);border-bottom:1px solid rgba(255,211,77,.2)}
+.emo{position:absolute;left:50%;top:28%;transform:translate(-50%,6px);opacity:0;z-index:6;padding:6px 10px;border-radius:12px;background:rgba(8,16,36,.86);color:#fff;font-size:12px;font-weight:700;max-width:88%;text-align:center;pointer-events:none;transition:opacity .2s,transform .2s}
+.emo.show{opacity:1;transform:translate(-50%,0)}
+.cwave{position:absolute;left:0;right:0;top:12%;text-align:center;opacity:0;z-index:5;font-weight:800;color:#c9e4ff;letter-spacing:.04em;pointer-events:none;transform:translateY(8px);transition:opacity .25s,transform .6s}
+.cwave.show{opacity:1;transform:translateY(0)}
+.brkt-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;margin:0 -4px}
+.brkt{display:flex;gap:10px;min-width:min-content}
+.brcol{min-width:160px;flex:0 0 160px}
+.seedlist{margin:6px 0}
+.seedlist .me,.seed.me{background:rgba(255,211,77,.14);border-radius:6px;padding:2px 4px}
+.goat{height:10px;border-radius:99px;background:rgba(255,255,255,.08);overflow:hidden;margin:8px 0}
+.goat i{display:block;height:100%;background:linear-gradient(90deg,#7ec8ff,#ffd34d,#3ee68a)}
+.caric-wrap{margin:8px 0;border-radius:10px;overflow:hidden;border:1px solid rgba(80,60,20,.25)}
+.caric{display:block;width:100%;height:96px}
+.promo{background:linear-gradient(150deg,rgba(255,180,70,.16),rgba(20,40,95,.5))}
+.help p{margin:0 0 8px}
+@media (max-width:430px){
+ .ptsb{font-size:9px;padding:2px 8px 3px}
+ .brcol{min-width:148px;flex-basis:148px}
+ .caric{height:84px}
+ .emo{font-size:11px;padding:5px 8px}
+}
+
+/* themes */
+[data-theme="light"] body,body[data-theme="light"]{background:#e7eef8;color:#122038}
+[data-theme="light"] .card,[data-theme="light"] .hero,[data-theme="light"] .modal{background:#f7f9fd;color:#122038;border-color:rgba(20,40,80,.12)}
+[data-theme="light"] .mut,[data-theme="light"] .tiny.mut{color:#4a5b76}
+[data-theme="light"] .btn.ghost{background:rgba(20,40,80,.06);color:#122038}
+[data-theme="light"] .paper-sheet{background:#f6efd9}
+
+[data-theme="retro"] body,body[data-theme="retro"]{background:#1b1810;color:#f0e2b8}
+[data-theme="retro"] .card,[data-theme="retro"] .hero,[data-theme="retro"] .modal{background:#2a2418;border-color:#7a5a12;color:#f0e2b8}
+[data-theme="retro"] .btn.gold{background:#c9a24a;color:#1b1810}
+[data-theme="retro"] .paper-sheet{background:#efe3c0}
+[data-theme="retro"] .tvh,[data-theme="retro"] .tvsb{font-family:ui-monospace,Menlo,monospace}
