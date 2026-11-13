@@ -435,3 +435,72 @@ button#plVis.on{border-color:rgba(255,211,77,.7);background:rgba(255,211,77,.18)
 .matchopts .plvis b{font-weight:800;margin-left:6px;color:#8ea6d8}
 .matchopts .plvis.on{border-color:rgba(255,211,77,.7);background:rgba(255,211,77,.16)}
 .matchopts .plvis.on b{color:#ffd34d}
+.liveodds{padding:2px 8px 0;text-align:left;flex:none;z-index:3}
+.lov{background:rgba(8,16,40,.72);border:1px solid rgba(255,211,77,.28);border-radius:10px;padding:5px 8px 6px}
+.lov-odds{display:flex;justify-content:space-between;align-items:center;gap:6px;font:600 11px/1.2 system-ui;color:#d7e6ff}
+.lov-odds b{font-size:13px}
+.lov-vol{text-align:center;font:800 12px/1.2 system-ui;color:#eef4ff;margin-top:3px}
+.lov-vol b{color:#ffd34d;font-size:16px;font-variant-numeric:tabular-nums;margin:0 4px}
+.lov-vol .add{color:#3ee68a;font-size:12px;margin-left:4px}
+.lov-vol .spk{display:inline-block;margin-left:6px;font-size:10px;color:#ffb648;text-transform:uppercase;letter-spacing:.04em}
+.lov.spike{border-color:rgba(255,211,77,.7);box-shadow:0 0 0 1px rgba(255,211,77,.25)}
+.lov-bar{margin:4px 0 3px;height:6px}
+.lov-split{display:flex;justify-content:space-between;gap:8px;font:700 10.5px/1.2 system-ui;color:#d7e6ff;font-variant-numeric:tabular-nums}
+.lov-pre{text-align:center;font:600 10px/1.3 system-ui;color:#8ea6d8;margin-top:2px}
+@media (max-height:720px){
+  .mview>.court-wrap{min-height:188px}
+  .mview .kc{height:76px;width:68px}
+  .lov{padding:4px 7px 5px}
+  .lov-vol b{font-size:15px}
+}
+.mview{overflow:hidden;max-width:100%;width:100%}
+.mctrl{display:flex;flex-direction:column;gap:5px;padding:5px 8px calc(8px + env(safe-area-inset-bottom,0px));align-items:stretch;width:100%;max-width:100%;box-sizing:border-box;overflow:hidden;flex:none}
+.mctrl-row{display:flex;gap:5px;align-items:center;min-width:0;width:100%;flex-wrap:nowrap}
+.mctrl .seg-t{flex:1 1 auto;min-width:0;justify-content:space-between}
+.mctrl .seg-t button{flex:1 1 0;min-width:0;padding:7px 2px;font-size:13px}
+.mctrl .btn{flex:none;padding:8px 8px;font-size:14px}
+.mview .cards{width:100%;max-width:100%;overflow-x:auto;overflow-y:hidden;-webkit-overflow-scrolling:touch;overscroll-behavior-x:contain}
+.matchopts{min-width:0;max-width:100%;flex-wrap:wrap}
+.matchopts .btn{min-width:0}
+.lov-odds,.lov-split,.lov-pre,.lov-vol{min-width:0;overflow-wrap:anywhere}
+.mbars,.comm,.liveodds,.mom,.tvsb{max-width:100%}
+@media (max-width:430px){
+  .mctrl .btn{padding:8px 7px}
+  .mctrl .seg-t button{padding:7px 1px;font-size:12.5px}
+}
+@media (max-width:374px){
+  .mctrl{padding:4px 6px calc(8px + env(safe-area-inset-bottom,0px));gap:4px}
+  .mctrl .btn{padding:7px 6px;font-size:13px}
+}
+
+.lov.paused{border-color:rgba(255,182,72,.7)}
+.lov-susp{text-align:center;font:800 10px/1.2 system-ui;color:#ffb648;text-transform:uppercase;letter-spacing:.04em;margin-top:3px}
+.lov-spark-w{display:flex;justify-content:center;margin:2px 0 0}
+.lov-spark{display:block;width:100%;max-width:160px;height:20px}
+.mctrl .retb{padding:8px 7px}
+@media (max-height:720px){.lov-spark{height:16px}}
+@media (max-height:700px){
+  .mview>.court-wrap{flex:1 1 auto;min-height:120px}
+  .mview .cards{padding:2px 8px}
+  .mview .kc{height:58px;width:54px;padding:2px}
+  .mview .kc .kring{width:26px;height:26px}
+  .mview .kc .ki{font-size:16px}
+  .mview .kc .kn{font-size:9px;margin-top:1px}
+  .comm{min-height:0;padding:4px 8px;font-size:11.5px;margin:0 8px}
+  .mbars{padding:2px 10px 0;font-size:10px}
+  .mom{margin:2px 10px 0;height:5px}
+  .tvsb{margin:4px 6px 2px}
+  .tvsb .tvh{padding:2px 6px;font-size:11px}
+  .tvsb .pl{font-size:15px;padding:2px 6px 2px 4px}
+  .tvsb .st,.tvsb .pt{font-size:15px}
+  .lov{padding:3px 6px 3px}
+  .lov-vol{margin-top:1px}
+  .lov-vol b{font-size:14px}
+  .lov-spark{height:14px}
+  .lov-bar{margin:2px 0 2px;height:5px}
+  .matchopts{padding:2px 8px 0}
+  .matchopts .btn{padding:6px 8px;font-size:12px}
+  .mctrl{padding:3px 6px calc(6px + env(safe-area-inset-bottom,0px));gap:3px}
+  .mctrl .btn{padding:6px 6px}
+  .mctrl .seg-t button{padding:5px 1px;font-size:12px}
+}
