@@ -49,37 +49,62 @@ const TIERS = {
  GS:   {name:'Grand Slam', short:'GS', bo:5, color:'#ffd34d', rankOrd:10, qr:3, main:104, qual:232,
         T:{128:{pts:[2000,1300,800,400,200,100,50,10],sh:[.105,.053,.027,.014,.0084,.005,.0033,.0023],qpts:[30,16,8],qsh:[.0013,.0009,.0006]}}},
  M1000:{name:'Masters 1000', short:'1000', bo:3, color:'#c9a2ff', rankOrd:9, qr:2, main:80, qual:170,
-        T:{96:{pts:[1000,650,400,200,100,50,30,10],sh:[.122,.065,.036,.02,.011,.0062,.0037,.0025],qpts:[20,10],qsh:[.0013,.0007]},
-           56:{pts:[1000,650,400,200,100,50,10],sh:[.154,.083,.045,.024,.013,.0075,.0041],qpts:[30,16],qsh:[.0021,.0011],main:46,qual:100}}},
+        T:{96:{pts:[1000,650,400,200,100,50,30,10],sh:[.122,.065,.036,.02,.011,.0062,.0037,.0025],abs:[1200000,640000,350000,193000,105000,62000,36000,24500],qpts:[20,10],qsh:[.0013,.0007],qabs:[15000,8000]},
+           56:{pts:[1000,650,400,200,100,50,10],sh:[.154,.083,.045,.024,.013,.0075,.0041],abs:[1025000,556000,302000,166000,91600,52400,29000],qpts:[30,16],qsh:[.0021,.0011],qabs:[16000,8500],main:46,qual:100}}},
  A500: {name:'ATP 500', short:'500', bo:3, color:'#5fd0ff', rankOrd:8, qr:2, main:50, qual:120,
-        T:{32:{pts:[500,330,200,100,50,0],sh:[.18,.097,.052,.027,.0145,.0088],qpts:[25,13],qsh:[.0045,.0024]},
-           48:{pts:[500,330,200,100,50,25,0],sh:[.17,.092,.05,.026,.014,.0085,.0055],qpts:[16,8],qsh:[.0035,.0018],main:70,qual:150}}},
+        T:{32:{pts:[500,330,200,100,50,0],sh:[.18,.097,.052,.027,.0145,.0088],abs:[455000,245000,131000,67500,36000,19300],qpts:[25,13],qsh:[.0045,.0024],qabs:[9900,5500]},
+           48:{pts:[500,330,200,100,50,25,0],sh:[.17,.092,.05,.026,.014,.0085,.0055],abs:[430000,232000,124000,64000,34500,20000,12500],qpts:[16,8],qsh:[.0035,.0018],qabs:[7500,4200],main:70,qual:150}}},
  A250: {name:'ATP 250', short:'250', bo:3, color:'#7cf0a8', rankOrd:7, qr:2, main:82, qual:200,
-        T:{28:{pts:[250,165,100,50,25,0],sh:[.124,.072,.042,.024,.014,.0087],qpts:[13,7],qsh:[.0058,.003],main:76,qual:190},
-           32:{pts:[250,165,100,50,25,0],sh:[.124,.072,.042,.024,.014,.0087],qpts:[13,7],qsh:[.0058,.003]},
-           48:{pts:[250,165,100,50,25,13,0],sh:[.121,.07,.04,.023,.0135,.0085,.0055],qpts:[8,4],qsh:[.004,.002],main:112,qual:240}}},
+        T:{28:{pts:[250,165,100,50,25,0],sh:[.124,.072,.042,.024,.014,.0087],abs:[102500,59800,35100,20300,11800,7100],qpts:[13,7],qsh:[.0058,.003],qabs:[4000,2200],main:76,qual:190},
+           32:{pts:[250,165,100,50,25,0],sh:[.124,.072,.042,.024,.014,.0087],abs:[102500,59800,35100,20300,11800,7100],qpts:[13,7],qsh:[.0058,.003],qabs:[4000,2200]},
+           48:{pts:[250,165,100,50,25,13,0],sh:[.121,.07,.04,.023,.0135,.0085,.0055],abs:[98000,57500,33600,19500,11400,6900,4500],qpts:[8,4],qsh:[.004,.002],qabs:[3200,1800],main:112,qual:240}}},
  C175: {name:'Challenger 175', short:'CH175', bo:3, color:'#ff8a4a', rankOrd:6, qr:2, main:105, qual:210,
-        T:{32:{pts:[175,90,50,25,13,0],sh:chSh([48000,28310,16695,9725,5765,3450],300000),qpts:[6,3],qsh:[.0035,.002]}}},
+        T:{32:{pts:[175,90,50,25,13,0],sh:chSh([48000,28310,16695,9725,5765,3450],300000),abs:[48000,28310,16695,9725,5765,3450],qpts:[6,3],qsh:[.0035,.002],qabs:[1050,600]}}},
  C125: {name:'Challenger 125', short:'CH125', bo:3, color:'#ff9f5a', rankOrd:5, qr:2, main:175, qual:330,
-        T:{32:{pts:[125,64,35,16,8,0],sh:chSh([33650,19700,11705,6800,3895,2255],225000),qpts:[5,3],qsh:[.0035,.002]}}},
+        T:{32:{pts:[125,64,35,16,8,0],sh:chSh([33650,19700,11705,6800,3895,2255],225000),abs:[33650,19700,11705,6800,3895,2255],qpts:[5,3],qsh:[.0035,.002],qabs:[790,450]}}},
  C100: {name:'Challenger 100', short:'CH100', bo:3, color:'#ffb37a', rankOrd:4, qr:2, main:235, qual:420,
-        T:{32:{pts:[100,50,25,14,7,0],sh:chSh([26130,15430,9205,5350,3060,1770],177000),qpts:[4,2],qsh:[.0035,.002]}}},
+        T:{32:{pts:[100,50,25,14,7,0],sh:chSh([26130,15430,9205,5350,3060,1770],177000),abs:[26130,15430,9205,5350,3060,1770],qpts:[4,2],qsh:[.0035,.002],qabs:[620,350]}}},
  C75:  {name:'Challenger 75', short:'CH75', bo:3, color:'#ffc89a', rankOrd:3, qr:2, main:300, qual:540,
-        T:{32:{pts:[75,44,22,12,6,0],sh:chSh([17000,9600,5510,3095,1740,1045],107000),qpts:[4,2],qsh:[.0035,.002]}}},
+        T:{32:{pts:[75,44,22,12,6,0],sh:chSh([17000,9600,5510,3095,1740,1045],107000),abs:[17000,9600,5510,3095,1740,1045],qpts:[4,2],qsh:[.0035,.002],qabs:[370,210]}}},
  C50:  {name:'Challenger 50', short:'CH50', bo:3, color:'#ffd9b8', rankOrd:2, qr:2, main:380, qual:700,
-        T:{32:{pts:[50,25,14,8,4,0],sh:chSh([9500,5500,3145,1800,1010,630],63000),qpts:[3,1],qsh:[.0035,.002]}}},
+        T:{32:{pts:[50,25,14,8,4,0],sh:chSh([9500,5500,3145,1800,1010,630],63000),abs:[9500,5500,3145,1800,1010,630],qpts:[3,1],qsh:[.0035,.002],qabs:[220,130]}}},
  M25:  {name:'ITF M25', short:'M25', bo:3, color:'#b8c4d6', rankOrd:1, qr:2, main:700, qual:99999,
-        T:{32:{pts:[25,14,7,3,1,0],abs:[3600,2100,1200,700,400,250],qpts:[0,0],qabs:[150,100]}}},
+        T:{32:{pts:[25,16,8,3,1,0],abs:[3600,2120,1255,730,430,260],qpts:[0,0],qabs:[150,100]}}},
  M15:  {name:'ITF M15', short:'M15', bo:3, color:'#93a1b5', rankOrd:0, qr:0, main:99999, qual:99999,
-        T:{32:{pts:[15,8,4,2,1,0],abs:[2160,1270,750,430,250,150],qpts:[],qabs:[]}}},
+        T:{32:{pts:[15,9,5,3,1,0],abs:[2160,1272,753,438,258,156],qpts:[],qabs:[]}}},
  FIN:  {name:'ATP Finals', short:'FINALS', bo:3, color:'#ff5fa2', rankOrd:11, qr:0, main:8, qual:0, T:{8:{pts:[],sh:[]}}}
 };
 // table for a concrete calendar event (draw-size specific)
 function tierTab(t){const tr=TIERS[t.tier];const k=Object.keys(tr.T);const d=t.draw||+k[0];return tr.T[d]||tr.T[k.reduce((a,b)=>Math.abs(b-d)<Math.abs(a-d)?b:a)];}
 function evMain(t){const x=tierTab(t);return x.main||TIERS[t.tier].main;}
 function evQual(t){const x=tierTab(t);return x.qual||TIERS[t.tier].qual;}
-function evPrize(t,idx){const x=tierTab(t);if(x.abs)return x.abs[idx]||0;return Math.round((x.sh[idx]||0)*(t.pm||0)/10)*10;}
-function evQPrize(t,i){const x=tierTab(t);if(x.qabs)return x.qabs[i]||0;return Math.round((x.qsh[i]||0)*(t.pm||0)/10)*10;}
+// Official-like 2026 singles prize money (USD). Event-specific GS tables; other tiers use abs and scale with the event's financial commitment.
+const GS_PRIZE={
+ t580:{abs:[2500000,1350000,775000,420000,260000,180000,120000,85000],qabs:[45000,30000,20000],pm:18500000}, // Australian Open (AUD converted)
+ t520:{abs:[2800000,1400000,760000,490000,290000,185000,128000,86000],qabs:[43000,29000,20000],pm:21000000}, // Roland Garros
+ t540:{abs:[3450000,1770000,905000,520000,311000,197000,127000,85000],qabs:[50000,32000,21000],pm:25000000}, // Wimbledon
+ t560:{abs:[5000000,2500000,1260000,662000,394000,237000,154000,110000],qabs:[52000,38000,25000],pm:35000000}  // US Open
+};
+const TIER_PM={GS:25000000,M1000:11000000,A500:2900000,A250:800000,C175:300000,C125:225000,C100:177000,C75:107000,C50:63000,M25:25000,M15:15000};
+const FIN_PRIZE_2026={entry:331000,rr:396000,sf:1183000,w:2370000};
+function prizeInfl(season){season=season||(typeof S!=='undefined'&&S&&S.season)||2026;return Math.pow(1.035,Math.max(0,season-2026));}
+function evPrizeScale(t){
+ const infl=prizeInfl(t&&t.season);
+ const typ=TIER_PM[t.tier];const base=t.pm0!=null?t.pm0:(t.pm||typ||0);
+ if(!typ||!base)return infl;
+ return infl*Math.max(0.72,Math.min(1.55,base/typ));
+}
+function evPrize(t,idx){const infl=prizeInfl(t&&t.season);const sp=GS_PRIZE[t.id];
+ if(sp)return Math.round((sp.abs[idx]||0)*infl/10)*10;
+ const x=tierTab(t);const sc=evPrizeScale(t);
+ if(x.abs)return Math.round((x.abs[idx]||0)*sc/10)*10;
+ return Math.round((x.sh[idx]||0)*(t.pm0!=null?t.pm0:t.pm||0)*infl/10)*10;}
+function evQPrize(t,i){const infl=prizeInfl(t&&t.season);const sp=GS_PRIZE[t.id];
+ if(sp)return Math.round((sp.qabs[i]||0)*infl/10)*10;
+ const x=tierTab(t);const sc=evPrizeScale(t);
+ if(x.qabs)return Math.round((x.qabs[i]||0)*sc/10)*10;
+ return Math.round((x.qsh[i]||0)*(t.pm0!=null?t.pm0:t.pm||0)*infl/10)*10;}
+function evDotace(t){if(GS_PRIZE[t.id])return Math.round(GS_PRIZE[t.id].pm*prizeInfl(t.season)/10)*10;return t.pm||0;}
 const pow2=n=>{let b=1;while(b<n)b*=2;return b;};
 const SEEDS_N=d=>d<=8?0:d<=32?8:d<=64?16:32;
 const SURF = {H:{name:'Tvrdý',color:'#2d6fd6',line:'#e9f1ff',icon:'🟦'},C:{name:'Antuka',color:'#d0652e',line:'#fff3ea',icon:'🟧'},G:{name:'Tráva',color:'#3d9a3f',line:'#f2fff0',icon:'🟩'},I:{name:'Hala',color:'#5b3fb0',line:'#f1ecff',icon:'🟪'}};
@@ -97,28 +122,45 @@ const ITF_VENUES = [ // [city, country, lat, lon, surface, season: A=all year, S
  ['Manacor','ESP',39.57,3.21,'H','W'],['Tampa','USA',27.95,-82.46,'C','W'],['Lakewood','USA',33.85,-118.13,'H','S'],['Cancún','MEX',21.16,-86.85,'H','A'],
  ['São Paulo','BRA',-23.55,-46.63,'C','A'],['Buenos Aires','ARG',-34.6,-58.38,'C','A'],['Nonthaburi','THA',13.86,100.52,'H','A'],['Čennaj','IND',13.08,80.27,'H','W'],
  ['Nakhon Si Thammarat','THA',8.43,99.96,'H','S'],['Šymkent','KAZ',42.3,69.6,'C','S'],['Tokio','JPN',35.68,139.69,'H','A'],['Jakarta','INA',-6.2,106.85,'H','A'],
- ['Kalmar','SWE',56.66,16.36,'C','S'],['Ystad','SWE',55.43,13.82,'C','S'],['Duffel','BEL',51.09,4.51,'C','S'],['Wels','AUT',48.16,14.03,'C','S']
+ ['Kalmar','SWE',56.66,16.36,'C','S'],['Ystad','SWE',55.43,13.82,'C','S'],['Duffel','BEL',51.09,4.51,'C','S'],['Wels','AUT',48.16,14.03,'C','S'],
+ ['Dauhá','QAT',25.3,51.5,'H','W'],['Dubaj','UAE',25.07,55.19,'H','W'],['Loughborough','GBR',52.77,-1.21,'I','W'],['Bergamo','ITA',45.7,9.67,'I','W'],['Oeiras','POR',38.69,-9.31,'H','W'],['Tallahassee','USA',30.44,-84.28,'C','S']
 ];
 function cleanEvName(n){n=String(n).replace(/\s*\b20\d\d\b\s*/g,' ').replace(/\s+/g,' ').trim();
  if(n.length>4&&n===n.toUpperCase()&&/[A-Z]/.test(n))n=n.toLowerCase().replace(/(^|[\s\-'(+\/])([a-zà-ž])/g,(m,a,b)=>a+b.toUpperCase()).replace(/\b(Atp|Itf|Iii|Ii|Iv|Ieb|Bnp|Bmw|Ubs)\b/g,x=>x.toUpperCase()).replace(/\b(Di|De|Del|Da|Du|La|Le|Of|And)\b/g,x=>x.toLowerCase());
  return n;}
-function buildCalendar(){
+const CAL_SRC_YEAR=2026;
+function weekMonday(season,w){const d=new Date(season,0,1,12,0,0);d.setDate(d.getDate()+((8-d.getDay())%7)+(w-1)*7);return d;}
+function weekOfDate(year,month,date){const t=new Date(year,month,date,12,0,0);const m1=new Date(year,0,1,12,0,0);m1.setDate(m1.getDate()+((8-m1.getDay())%7));let w=Math.round((t-m1)/86400000/7)+1;if(w<1)w=month===11?52:1;if(w>52)w=52;return w;}
+function weekLabel(season,w,len){const a=weekMonday(season,w);const b=new Date(a);b.setDate(a.getDate()+7*(len||1)-1);const fy=a.getFullYear()!==season||b.getFullYear()!==season;const fa=(d,y)=>`${d.getDate()}. ${d.getMonth()+1}.`+(y||fy?` ${d.getFullYear()}`:'');return fy?`${fa(a,true)} – ${fa(b,true)}`:`${a.getDate()}. ${a.getMonth()+1}. – ${b.getDate()}. ${b.getMonth()+1}. ${season}`;}
+function mapWeekToSeason(srcWeek,season){if(season===CAL_SRC_YEAR)return srcWeek;const sd=weekMonday(CAL_SRC_YEAR,srcWeek);return weekOfDate(season,sd.getMonth(),sd.getDate());}
+function buildCalendar(season){
+ season=season||CAL_SRC_YEAR;
+ const infl=prizeInfl(season);
  const cal=[];
- for(const t of CAL_REAL){const c=Object.assign({},t);c.name=cleanEvName(c.name);if(c.lat==null){const k=COUNTRIES[c.cc];c.lat=k?k[2]:45;c.lon=k?k[3]:10;}cal.push(c);}
- // ITF World Tennis Tour (M15/M25): real ITF weeks have 15+ events; the game models 4 per week at typical venues (approximation)
- // ITF World Tennis Tour (M15/M25): the real calendar has ~12 men's events a week; the game models 12 a week at real ITF venues
- for(let w=1;w<=51;w++){
-  const summer=w>=14&&w<=42;
-  const pool=ITF_VENUES.map((v,i)=>[v,i]).filter(([v])=>v[5]==='A'||(summer?v[5]==='S':v[5]==='W'));
-  let sd=w*7919+13;const r=()=>{sd=(sd*1103515245+12345)%2147483648;return sd/2147483648;};const picks=pool.slice().sort(()=>r()-0.5).slice(0,12);
-  picks.forEach(([v,vi],k)=>{const tier=k<4?'M25':'M15';
-   cal.push({id:`itf${w}_${k}`,name:`ITF ${tier} ${v[0]}`,city:v[0],cc:v[1],lat:v[2],lon:v[3],tier,surf:v[4],week:w,len:1,draw:32,pm:tier==='M25'?30000:15000});});
+ for(const t of CAL_REAL){const c=Object.assign({},t);c.name=cleanEvName(c.name);if(c.lat==null){const k=COUNTRIES[c.cc];c.lat=k?k[2]:45;c.lon=k?k[3]:10;}
+  c.pm0=c.pm||0;c.week0=c.week;c.week=mapWeekToSeason(c.week0,season);c.season=season;c.pm=Math.round(c.pm0*infl);if(GS_PRIZE[c.id])c.pm=Math.round(GS_PRIZE[c.id].pm*infl);
+  cal.push(c);}
+ // ITF: 16 men's events most weeks (6× M25 + 10× M15), seeded by season so the venues rotate year to year. Week 52 is the off-season – still a few warm-location ITFs.
+ for(let w=1;w<=52;w++){
+  const summer=w>=14&&w<=42;const off=w>=51;
+  const pool=ITF_VENUES.map((v,i)=>[v,i]).filter(([v])=>v[5]==='A'||(off?v[5]!=='S':(summer?v[5]==='S':v[5]==='W')));
+  let sd=(season*10007+w*7919+13)>>>0;const r=()=>{sd=(Math.imul(sd,1103515245)+12345)>>>0;return sd/4294967296;};
+  const n=off?8:16;const picks=pool.slice().sort(()=>r()-0.5).slice(0,n);
+  picks.forEach(([v],k)=>{const tier=(off?k<3:k<6)?'M25':'M15';
+   cal.push({id:`itf${w}_${k}`,name:`ITF ${tier} ${v[0]}`,city:v[0],cc:v[1],lat:v[2],lon:v[3],tier,surf:v[4],week:w,len:1,draw:32,pm0:tier==='M25'?25000:15000,pm:Math.round((tier==='M25'?25000:15000)*infl),season});});
  }
+ // A few extra Challenger 50s in thin weeks, so a low-ranked player always has a path
+ const CX=[['Antalya','TUR',36.9,30.7,'C'],['Monastir','TUN',35.77,10.83,'H'],['Šarm aš-Šajch','EGY',27.9,34.3,'H'],['Praha','CZE',50.05,14.45,'C'],['Bratislava','SVK',48.15,17.11,'I'],['Oeiras','POR',38.69,-9.31,'H'],['Tallahassee','USA',30.44,-84.28,'C'],['Lima','PER',-12.05,-77.04,'C']];
+ for(let w=2;w<=50;w++){const ch=cal.filter(t=>t.week===w&&t.tier[0]==='C').length;if(ch>=3)continue;
+  const v=CX[(w+season)%CX.length];const surf=(w>=44||w<=8)&&v[4]==='C'?'I':v[4];
+  if(cal.some(t=>t.week===w&&t.city===v[0]&&t.tier[0]==='C'))continue;
+  cal.push({id:`cx${w}`,name:`Challenger 50 ${v[0]}`,city:v[0],cc:v[1],lat:v[2],lon:v[3],tier:'C50',surf,week:w,len:1,draw:32,pm0:63000,pm:Math.round(63000*infl),season});}
  for(const c of cal){if(c.tier==='FIN')c.draw=8;}
  return cal;
 }
-const CAL = buildCalendar();
-const CAL_BY_ID = Object.fromEntries(CAL.map(t=>[t.id,t]));
+let CAL=[],CAL_BY_ID={};
+function setCalendar(season){CAL=buildCalendar(season);CAL_BY_ID=Object.fromEntries(CAL.map(t=>[t.id,t]));return CAL;}
+setCalendar(2026);
 
 // Name pools for generated lower-level players
 const NAME_POOLS = {
