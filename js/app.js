@@ -5,7 +5,7 @@ const STORE=(function(){const mem={};let ls=null;try{const t='__tm_t';window.loc
   del(k){delete mem[k];try{if(ls)ls.removeItem(k);}catch(e){}}};})();
 // ===================== ENGINE =====================
 const SAVE_KEY='tenisManazer_save_v2';
-const GAME_VER=5;
+const GAME_VER=6;
 let RNG=Math.random;
 const rnd=(a,b)=>a+RNG()*(b-a), rint=(a,b)=>Math.floor(rnd(a,b+1)), pick=a=>a[Math.floor(RNG()*a.length)];
 const clamp=(x,a,b)=>x<a?a:x>b?b:x;
@@ -95,9 +95,9 @@ function newGame(opts){
  const sb={ATK:{fh:4,srv:2,kon:-2,men:-1},BIG:{srv:6,ret:-2,bh:-1},BASE:{bh:3,ret:2,srv:-2},CTR:{ret:3,kon:4,srv:-3,fh:-1},ALL:{men:1}}[opts.style||'ALL'];
  for(const k in sb)sts[k]+=sb[k];
  const me={id:'me',isMe:true,n:opts.name||'Hráč',cc:opts.cc||'CZE',by:S.season-17,hand:opts.hand||'R',bh1:!!opts.bh1,hcm:185,load:0,injT:null,injH:[],tac:Object.assign({},TAC_DEF),st:sts,sf:{H:0,C:0,G:0,I:0},style:opts.style||'ALL',pw:new Array(52).fill(0),form:0,real:false,titles:0,sw:0,sl:0,rank:null,prev:null,best:null,
-  xp:{fh:0,bh:0,srv:0,ret:0,kon:0,men:0},energy:100,money:20000,coach:1,fyzio:0,mental:0,gear:{raketa:0,boty:0,vyplet:0},tactic:'bal',injury:0,slots:3,
+  xp:{fh:0,bh:0,srv:0,ret:0,kon:0,men:0},energy:100,money:20000,coach:1,fyzio:0,physio:0,fitness:0,manager:0,mental:0,gear:{raketa:0,boty:0,vyplet:0},eq:{raketa:'all',boty:'all',vyplet:'all'},tactic:'bal',injury:0,slots:3,dpw:new Array(52).fill(0),intg:{rep:70,fixes:0,reports:0,flags:0,cool:0,off:null,jobs:[],banned:null},sponsOff:[],
   look:opts.look||{skin:'#e8b896',hair:'#3a2a1a',shirt:'#2f7bff'},
-  car:{w:0,l:0,surf:{H:[0,0],C:[0,0],G:[0,0],I:[0,0]},aces:0,df:0,titleList:[],finals:0,prize:0,best:null,streak:0,bestStreak:0,top10:0,longest:0,tb:[0,0],matches:0},
+  car:{w:0,l:0,surf:{H:[0,0],C:[0,0],G:[0,0],I:[0,0]},aces:0,df:0,titleList:[],finals:0,prize:0,best:null,streak:0,bestStreak:0,top10:0,longest:0,tb:[0,0],matches:0,davis:{p:0,w:0,l:0,title:0},dtitles:0},
   hist:[],seasons:[],ach:{},h2h:{},trainLog:[],pop:2,spons:{},popHist:[],season0:{w:0,l:0,titles:0,prize:0}};
  S.players.unshift(me);
  rebuildIndex();
@@ -214,8 +214,8 @@ function matchInjury(p,t,allowRet,bo){if(!p||p.isMe)return null;p.load=(p.load||
 // ---------- events ----------
 function seedOrder(n){let o=[1,2];while(o.length<n){const m=o.length*2;const r=[];for(const x of o){r.push(x);r.push(m+1-x);}o=r;}return o;}
 const roundName=(remain)=>remain===2?'Finále':remain===4?'Semifinále':remain===8?'Čtvrtfinále':null;
-function evRoundName(ev,ri){if(ev.tier==='FIN')return ['1. kolo skupiny','2. kolo skupiny','3. kolo skupiny','Semifinále','Finále'][ri];const size=ev.size>>ri;return roundName(size)||`${ri+1}. kolo`;}
-function resultName(ev,res){if(ev.tier==='FIN'){return res==='W'?'Vítěz':res==='F'?'Finále':res==='SF'?'Semifinále':'Skupina';}const tr=ev.nr;if(res>=tr)return 'Vítěz';const remain=ev.size>>res;return {2:'Finále',4:'Semifinále',8:'Čtvrtfinále'}[remain]||('R'+remain);}
+function evRoundName(ev,ri){if(ev.tier==='DC')return ev.phase==='fin'?'Finále Davis Cupu':'Baráž Davis Cupu';if(ev.tier==='FIN')return ['1. kolo skupiny','2. kolo skupiny','3. kolo skupiny','Semifinále','Finále'][ri];const size=ev.size>>ri;return roundName(size)||`${ri+1}. kolo`;}
+function resultName(ev,res){if(ev.tier==='DC')return ev.champ==='me'||res>=(ev.nr||1)?'Výhra':'Prohra';if(ev.tier==='FIN'){return res==='W'?'Vítěz':res==='F'?'Finále':res==='SF'?'Semifinále':'Skupina';}const tr=ev.nr;if(res>=tr)return 'Vítěz';const remain=ev.size>>res;return {2:'Finále',4:'Semifinále',8:'Čtvrtfinále'}[remain]||('R'+remain);}
 
 function createEvent(t,entrants){
  const tier=TIERS[t.tier];
@@ -319,7 +319,7 @@ function eligibility(t,p){
  if(tier.qr>0&&r<=QUAL)return {mode:'qual',txt:`Kvalifikace (${tier.qr} kola)`};
  return {mode:null,txt:`Potřebuješ žebříček do ${QUAL<9999?QUAL:MAIN}. místa (kvalifikace) / ${MAIN}. (hlavní soutěž)`};
 }
-function travelCost(t,p){p=p||ME();const c=COUNTRIES[p.cc];const d=distKm(c[2],c[3],t.lat,t.lon);let cost=180+d*0.11;if(['GS','M1000','FIN'].includes(t.tier))cost*=0.65;if(t.tier==='M15'||t.tier==='M25')cost*=0.48;if(t.tier[0]==='C')cost*=0.75;if(t.cc===p.cc)cost*=0.5;if(t.tier==='FIN')cost=0;return Math.round(Math.min(cost,2600)/10)*10;}
+function travelCost(t,p){p=p||ME();const c=COUNTRIES[p.cc];const d=distKm(c[2],c[3],t.lat,t.lon);let cost=180+d*0.11;if(['GS','M1000','FIN'].includes(t.tier))cost*=0.65;if(t.tier==='M15'||t.tier==='M25')cost*=0.48;if(t.tier[0]==='C')cost*=0.75;if(t.cc===p.cc)cost*=0.5;if(t.tier==='FIN'||t.tier==='DC')cost=0;return Math.round(Math.min(cost,2600)/10)*10;}
 function distKm(a,b,c,d){const R=6371,toR=Math.PI/180;const x=Math.sin((c-a)*toR/2)**2+Math.cos(a*toR)*Math.cos(c*toR)*Math.sin((d-b)*toR/2)**2;return 2*R*Math.asin(Math.sqrt(x));}
 
 function aiWants(p,t,r){
@@ -456,7 +456,7 @@ function humanMainResult(won,setsMe,matchInfo){
  else if(wasRR){if(ev.res.me==='RR')S.cur.status='out';}
  else if(!won)S.cur.status='out';
  // energy recovery between rounds
- const me=ME();me.energy=clamp(me.energy+10+me.fyzio*4,0,100);
+ const me=ME();me.energy=clamp(me.energy+10+(me.physio!=null?me.physio:me.fyzio)*4+(me.fitness||0)*3,0,100);
 }
 function humanByeAdvance(){const ev=humanEvent();const nm=humanNextMatch();if(nm&&nm.bye){nm.m.w='me';simRoundAI(ev);if(roundComplete(ev))advanceRound(ev);}}
 function humanMatchRecorded(ev,m,won,info){/* used if a human match is auto-simmed at finalize */ const opp=m.a==='me'?m.b:m.a;recordHumanMatch(ev,opp,won,info,false);}
@@ -479,7 +479,7 @@ function humanEventFinished(ev){
  if(ev.tier==='FIN')name=resultName(ev,res||'RR');
  else if(res==null){name=ev.myLostAt?'Kvalifikace ('+ev.myLostAt+')':'—';}
  else name=resultName(ev,res);
- if(ev.champ==='me'){me.car.titleList.push({s:S.season,tid:ev.tid,name:ev.name,tier:ev.tier,surf:ev.surf});me.season0.titles++;}
+ if(ev.champ==='me'&&ev.tier!=='DC'&&!ev.dbl){me.car.titleList.push({s:S.season,tid:ev.tid,name:ev.name,tier:ev.tier,surf:ev.surf});me.season0.titles++;}
  {const tb=POP_TITLE[ev.tier]||1;const home=ev.cc===me.cc?1.6:1;let g=0;
   if(ev.champ==='me')g=tb;else if((ev.tier!=='FIN'&&res===ev.nr-1)||res==='F')g=tb*0.4;else if((ev.tier!=='FIN'&&res===ev.nr-2&&TIERS[ev.tier].rankOrd>=2)||res==='SF')g=tb*0.2;
   if(g>0){const d=addPop(g*home);ev.myPop=d;}}
@@ -591,8 +591,8 @@ function train(k,type){const me=ME();const t=TRAIN_TYPES[type];
  return {ok:true,msg:`${STAT_NAMES[k]}: +${Math.round(r.g)} XP`+(r.ups?` · ⬆️ úroveň ${Math.round(me.st[k])}!`:'')+inj,ups:r.ups};
 }
 function rest(kind){const me=ME();if(me.slots<=0)return {ok:false,msg:'Žádné volné bloky tento týden.'};
- if(kind==='spa'){if(me.money<450)return {ok:false,msg:'Nedostatek peněz.'};me.money-=450;me.energy=clamp(me.energy+40+me.fyzio*5,0,100);}
- else me.energy=clamp(me.energy+22+me.fyzio*4,0,100);
+ if(kind==='spa'){if(me.money<450)return {ok:false,msg:'Nedostatek peněz.'};me.money-=450;me.energy=clamp(me.energy+40+(me.physio!=null?me.physio:me.fyzio)*5+(me.fitness||0)*4,0,100);}
+ else me.energy=clamp(me.energy+22+(me.physio!=null?me.physio:me.fyzio)*4+(me.fitness||0)*3,0,100);
  me.slots--;saveGame();return {ok:true,msg:'Energie doplněna.'};}
 const SHOP={
  coach:{name:'Trenér',icon:'🧢',max:5,cost:[0,0,9000,35000,130000,420000],desc:l=>`Úroveň ${l}: trénink ×${COACH_MULT[l]}, odemyká karty, ${fmtMoney(COACH_SAL[l])}/týden`},
@@ -912,7 +912,7 @@ function migrateSave(s){if(!s||typeof s!=='object')return s;
  if(s.players)for(const p of s.players){if(p.prev===undefined)p.prev=p.rank;if(p.injH==null)p.injH=[];if(p.load==null)p.load=0;if(p.isMe){if(p.pop==null){p.pop=2;p.spons={};p.popHist=[];}if(!p.tac)p.tac=Object.assign({},TAC_DEF);if(!p.season0)p.season0={w:0,l:0,titles:0,prize:0};if(!p.xp)p.xp={fh:0,bh:0,srv:0,ret:0,kon:0,men:0};}}
  if(!s.injNews)s.injNews=[];
  if(!s.news)s.news=[];
- if(s.v<5){s.v=GAME_VER;}
+ if(s.v<6){s.v=GAME_VER;}
  return s;}
 function saveGame(){if(!S||S._silent)return;try{S.v=GAME_VER;const c=Object.assign({},S);delete c.order;delete c._silent;const RP=(k,v)=>typeof v==='number'&&v%1!==0?Math.round(v*1000)/1000:v;let js=JSON.stringify(c,RP);
  if(!STORE.set(SAVE_KEY,js)){// quota exceeded: trim history and retry
@@ -920,11 +920,429 @@ function saveGame(){if(!S||S._silent)return;try{S.v=GAME_VER;const c=Object.assi
 function loadGame(){try{const raw=STORE.get(SAVE_KEY);if(!raw)return false;S=migrateSave(JSON.parse(raw));if(!S.players||!S.season)throw new Error('poškošený save');rebuildIndex();setCalendar(S.season);computeRanks();return true;}catch(e){console.warn(e);S=null;return false;}}
 function resetGame(){STORE.del(SAVE_KEY);S=null;}
 
+// ===================== V6: tým, vybavení, sponzoři, čtyřhra, Davis Cup, kurzy, integrita =====================
+const IJT='Integritní jednotka tenisu';
+
+function staffLvl(me,k){if(!me)return 0;if(k==='physio')return me.physio!=null?me.physio:(me.fyzio||0);if(k==='fitness')return me.fitness!=null?me.fitness:(me.fyzio||0);return me[k]||0;}
+const STAFF={
+ coach:{name:'Trenér',icon:'🧢',max:5,min:1,sal:[0,250,700,1800,4200,8500],cost:[0,0,9000,35000,130000,420000],
+  desc:l=>l<=0?'Bez trenéra':`Úr. ${l}: trénink ×${(COACH_MULT[l]||1).toFixed(2)}, karty dovedností, ${fmtMoney(COACH_SAL[l]||0)}/týd.`},
+ fitness:{name:'Kondiční trenér',icon:'💪',max:3,min:0,sal:[0,280,850,2300],cost:[0,5500,24000,82000],
+  desc:l=>l<=0?'Nemáš kondičního trenéra':`Úr. ${l}: +${6+l*6} energie/týden, odolnější trénink, ${fmtMoney([0,280,850,2300][l])}/týd.`},
+ physio:{name:'Fyzioterapeut',icon:'🩺',max:3,min:0,sal:[0,300,900,2400],cost:[0,6000,28000,95000],
+  desc:l=>l<=0?'Bez fyzioterapeuta':`Úr. ${l}: riziko zranění −${l*13} %, rychlejší léčba, ${fmtMoney(FYZIO_SAL[l])}/týd.`},
+ mental:{name:'Mentální kouč',icon:'🧠',max:3,min:0,sal:[0,250,800,2000],cost:[0,7000,32000,110000],
+  desc:l=>l<=0?'Bez mentálního kouče':`Úr. ${l}: mentalita +${l*2} v zápasech, ${fmtMoney(MENT_SAL[l])}/týd.`},
+ manager:{name:'Manažer',icon:'💼',max:3,min:0,sal:[0,400,1200,3500],cost:[0,8000,36000,125000],
+  desc:l=>l<=0?'Sám si řešíš smlouvy':`Úr. ${l}: lepší sponzorské nabídky (+${l*12} %), pomalejší úbytek popularity, ${fmtMoney([0,400,1200,3500][l])}/týd.`}
+};
+function weeklyCosts(me){if(!me)return 0;return (STAFF.coach.sal[staffLvl(me,'coach')]||0)+(STAFF.fitness.sal[staffLvl(me,'fitness')]||0)+(STAFF.physio.sal[staffLvl(me,'physio')]||0)+(STAFF.mental.sal[staffLvl(me,'mental')]||0)+(STAFF.manager.sal[staffLvl(me,'manager')]||0);}
+function hireStaff(k){const me=ME();const it=STAFF[k];if(!it)return {ok:false,msg:'Neznámá role.'};const l=staffLvl(me,k);if(l>=it.max)return {ok:false,msg:'Maximum.'};const c=it.cost[l+1];if(me.money<c)return {ok:false,msg:'Nedostatek peněz.'};me.money-=c;me[k]=l+1;if(k==='physio')me.fyzio=me.physio;saveGame();checkAchievements();return {ok:true,msg:`${it.icon} ${it.name} úr. ${l+1} je v týmu.`};}
+function fireStaff(k){const me=ME();const it=STAFF[k];if(!it)return {ok:false,msg:'Neznámá role.'};const l=staffLvl(me,k);if(l<=(it.min||0))return {ok:false,msg:it.min?`${it.name} nejde úplně propustit.`:'Nemáš koho propustit.'};me[k]=l-1;if(k==='physio')me.fyzio=me.physio;const sev=Math.round((it.sal[l]||0)*2);me.money-=sev;saveGame();return {ok:true,msg:`${it.name} úr. ${l} končí. Odstupné ${fmtMoney(sev)}.`};}
+
+const GEAR_MODELS={
+ raketa:[
+  {id:'all',n:'All-court Comp',d:'Vyvážená raketa bez slabin',b:{fh:.4,bh:.4}},
+  {id:'pwr',n:'Power Frame',d:'Těžší hlava, razance z forhendu a servisu',b:{fh:1,srv:.9,ret:-.3}},
+  {id:'ctl',n:'Control Pro',d:'Přesnost a jistotnější bekhend',b:{bh:1,fh:.3,men:.4,srv:-.2}}
+ ],
+ boty:[
+  {id:'all',n:'All-court Run',d:'Univerzální tlumení',b:{kon:.4}},
+  {id:'hrd',n:'Hard Court Grip',d:'Lepší pohyb na tvrdém (± na antuce)',surf:'H',b:{kon:.3}},
+  {id:'cly',n:'Clay Slider',d:'Širší podrážka na antuku',surf:'C',b:{kon:.3}},
+  {id:'grs',n:'Grass Fast',d:'Lehká bota na trávu a halu',surf:'G',b:{kon:.3}}
+ ],
+ vyplet:[
+  {id:'poly',n:'Polyester Spin',d:'Více rotace a razance na podání',b:{srv:1,fh:.3,ret:-.2}},
+  {id:'hyb',n:'Hybrid Control',d:'Kompromis kontroly a citu',b:{fh:.5,bh:.5}},
+  {id:'gut',n:'Natural Gut',d:'Cit v ruce, jistější return',b:{ret:1,men:.3,srv:-.2}}
+ ]
+};
+function gearModel(me,k){const list=GEAR_MODELS[k];const id=(me.eq&&me.eq[k])||'all';return list.find(x=>x.id===id)||list[0];}
+function setGearModel(k,id){const me=ME();me.eq=me.eq||{raketa:'all',boty:'all',vyplet:'all'};if(!GEAR_MODELS[k].some(x=>x.id===id))return {ok:false,msg:'Neznámý model.'};me.eq[k]=id;saveGame();return {ok:true,msg:`Zvoleno: ${gearModel(me,k).n}`};}
+function meBonus(p){if(!p||!p.isMe)return null;const g=p.gear||{};const out={fh:g.raketa||0,bh:g.raketa||0,srv:g.vyplet||0,ret:g.vyplet||0,kon:g.boty||0,men:staffLvl(p,'mental')*2};
+ const q=1+(Math.max(g.raketa||0,g.boty||0,g.vyplet||0))*0.12;
+ for(const k of ['raketa','boty','vyplet']){const m=gearModel(p,k);if(!m||!m.b)continue;for(const s in m.b)out[s]=(out[s]||0)+m.b[s]*q;}
+ return out;}
+function gearSurfBonus(p,surf){if(!p||!p.isMe)return 0;let b=0;for(const k of ['boty']){const m=gearModel(p,k);if(m.surf)b+=m.surf===surf?1.2:(m.surf==='G'&&surf==='I'?0.6:-0.5);}return b;}
+
+// --- sponsors with bonuses & offers ---
+const SPONSORS_V6=[
+ {id:'s1',th:8,rank:null,name:'Sportovní obchod U Kurtu',icon:'🏪',pay:250,sign:400,win:80,title:400,desc:'Místní obchod se sportovním vybavením'},
+ {id:'s2',th:18,rank:900,name:'SmashPro rakety',icon:'🎾',pay:800,sign:1200,win:220,title:1500,desc:'Výrobce raket a výpletů'},
+ {id:'s3',th:30,rank:500,name:'AquaVolt iontový nápoj',icon:'🥤',pay:2200,sign:4000,win:500,title:4000,desc:'Energetické nápoje pro sportovce'},
+ {id:'s4',th:45,rank:250,name:'Northline Sport oblečení',icon:'👕',pay:5500,sign:9000,win:1200,title:12000,desc:'Oblečení a obuv – kolekce s tvým jménem'},
+ {id:'s5',th:60,rank:120,name:'Chronex hodinky',icon:'⌚',pay:12000,sign:20000,win:2500,title:25000,desc:'Luxusní švýcarské hodinky'},
+ {id:'s6',th:75,rank:50,name:'Veloce Motors',icon:'🚗',pay:26000,sign:45000,win:6000,title:60000,desc:'Automobilka – ambasador značky'},
+ {id:'s7',th:90,rank:20,name:'Orbit Global',icon:'🌐',pay:55000,sign:90000,win:12000,title:140000,desc:'Globální technologická značka'}
+];
+function sponsorPayMul(me){return 1+0.12*staffLvl(me,'manager');}
+function sponsorPay(me){if(!me||!me.spons)return 0;const mul=sponsorPayMul(me);return SPONSORS_V6.filter(s=>me.spons[s.id]&&me.spons[s.id].on!==false).reduce((a,s)=>a+Math.round((me.spons[s.id].pay||s.pay)*mul),0);}
+function sponsorEligible(sp,me){if((me.pop||0)<sp.th)return false;if(sp.rank&&me.rank&&me.rank>sp.rank)return false;if(sp.rank&&!me.rank)return false;return true;}
+function updateSponsors(me,silent){me.spons=me.spons||{};me.sponsOff=me.sponsOff||[];
+ for(const sp of SPONSORS_V6){const has=me.spons[sp.id]&&me.spons[sp.id].on!==false;
+  if(!has&&sponsorEligible(sp,me)&&!me.sponsOff.some(o=>o.id===sp.id)&&!(me.spons[sp.id]&&me.spons[sp.id].declined)){
+   me.sponsOff.push({id:sp.id,s:S.season,w:S.week});
+   if(!silent)S.news.unshift({w:S.week,s:S.season,t:`✍️ Nová sponzorská nabídka: ${sp.icon} ${sp.name}`});}
+  else if(has&&((me.pop||0)<sp.th-8||(sp.rank&&me.rank&&me.rank>sp.rank*1.8))){me.spons[sp.id].on=false;if(!silent)S.news.unshift({w:S.week,s:S.season,t:`📉 ${sp.name} ukončil smlouvu.`});}}
+}
+function acceptSponsor(id){const me=ME();const sp=SPONSORS_V6.find(s=>s.id===id);if(!sp)return {ok:false,msg:'Neznámý sponzor.'};if(!sponsorEligible(sp,me))return {ok:false,msg:'Nesplňuješ podmínky nabídky.'};const mul=sponsorPayMul(me);const sign=Math.round(sp.sign*mul);me.spons[id]={s:S.season,w:S.week,on:true,pay:sp.pay};me.sponsOff=(me.sponsOff||[]).filter(o=>o.id!==id);me.money+=sign;saveGame();checkAchievements();return {ok:true,msg:`Smlouva s ${sp.name}! Podpisové ${fmtMoney(sign)}.`};}
+function declineSponsor(id){const me=ME();me.spons=me.spons||{};me.spons[id]={declined:1,s:S.season,w:S.week,on:false};me.sponsOff=(me.sponsOff||[]).filter(o=>o.id!==id);saveGame();return {ok:true,msg:'Nabídka odmítnuta.'};}
+function paySponsorBonuses(ev,wonTitle){const me=ME();if(!me||!me.spons)return 0;const mul=sponsorPayMul(me);let tot=0;
+ for(const sp of SPONSORS_V6){const c=me.spons[sp.id];if(!c||c.on===false)continue;let add=0;if(wonTitle)add=sp.title;else if(ev&&((ev.myPts||0)>0)){const deep=ev.champ==='me'||(ev.res&&(ev.res.me===ev.nr-1||ev.res.me==='F'||ev.res.me==='SF'||ev.res.me===ev.nr-2));if(deep)add=sp.win;}
+  if(add){add=Math.round(add*mul);tot+=add;}}
+ if(tot){me.money+=tot;me.car.prize=(me.car.prize||0)+tot;if(me.season0)me.season0.prize=(me.season0.prize||0)+tot;if(!S._silent)S.news.unshift({w:S.week,s:S.season,t:`💼 Sponzorské bonusy za výsledek: ${fmtMoney(tot)}`});}
+ return tot;}
+
+// --- rivalries ---
+function isRival(id){const me=ME();const h=me&&me.h2h&&me.h2h[id];return !!(h&&h[0]+h[1]>=3);}
+function rivalryList(){const me=ME();if(!me||!me.h2h)return [];return Object.entries(me.h2h).map(([id,v])=>{const p=P(id);return p&&v[0]+v[1]>=3?{id,p,w:v[0],l:v[1],n:v[0]+v[1]}:null;}).filter(Boolean).sort((a,b)=>b.n-a.n);}
+function noteRivalry(oppId,won){const me=ME();const h=me.h2h[oppId];if(!h||h[0]+h[1]!==3||S._silent)return;const p=P(oppId);if(!p)return;S.news.unshift({w:S.week,s:S.season,t:`⚔️ Rivalita! ${me.n} vs ${p.n} – po třetím vzájemném zápase je z toho série (${h[0]}:${h[1]}).`});}
+
+// --- doubles ranking ---
+function totalDPts(p){const a=(p.dpw||[]).filter(v=>v>0);if(!a.length)return 0;if(a.length<=19)return a.reduce((x,y)=>x+y,0);a.sort((x,y)=>y-x);let t=0;for(let i=0;i<19;i++)t+=a[i];return t;}
+function computeDRanks(){const arr=S.players.filter(p=>!p.retired);for(const p of arr)p._dt=totalDPts(p);arr.sort((a,b)=>b._dt-a._dt||overallOf(b.st)-overallOf(a.st));let r=0;for(const p of arr){if(p._dt>0){r++;p.dRank=r;}else p.dRank=null;if(p.dRank&&(!p.dBest||p.dRank<p.dBest))p.dBest=p.dRank;}}
+function initDoublesPoints(){for(const p of S.players){if(p.dpw&&p.dpw.length===52)continue;p.dpw=new Array(52).fill(0);p.dsw=0;p.dsl=0;const t=p.isMe?0:totalPts(p);if(t>0){const n=Math.max(2,Math.min(8,Math.round(t/400)+2));for(let i=0;i<n;i++)p.dpw[rint(0,51)]+=Math.max(0,Math.round(t*0.18/n*(0.4+RNG())));}}computeDRanks();}
+function doublesAllowed(t){if(!t||t.tier==='FIN'||t.tier==='DC'||t.tier==='M15')return false;return true;}
+const DBL_PTS={GS:[2000,1200,720,360,180,90,0],M1000:[1000,600,360,180,90,0],A500:[500,300,180,90,0],A250:[250,150,90,45,0],C175:[100,60,35,15,0],C125:[80,50,25,10,0],C100:[60,36,20,8,0],C75:[40,24,12,5,0],C50:[25,14,7,0],M25:[15,8,4,0]};
+function dblPtsFor(tier,idx){const t=DBL_PTS[tier]||DBL_PTS.C50;return t[idx]||0;}
+function partnerCandidates(t){const me=ME();const busy=activeBusy();const pool=S.order.map(P).filter(p=>p&&!p.isMe&&!p.retired&&!(p.injury>0)&&!busy.has(p.id));
+ const home=pool.filter(p=>p.cc===me.cc);const rest=pool.filter(p=>p.cc!==me.cc);
+ const score=p=>{const dr=p.dRank||p.rank||900;const close=Math.abs((me.dRank||me.rank||800)-dr);return (p.cc===me.cc?-80:0)+close-(p.style===me.style?10:0);};
+ return home.concat(rest).sort((a,b)=>score(a)-score(b)).slice(0,10);}
+function pairChem(a,b){let c=0;if(a.cc===b.cc)c+=2;if(a.style!==b.style)c+=1;if((a.style==='BIG'&&(b.style==='CTR'||b.style==='BASE'))||(b.style==='BIG'&&(a.style==='CTR'||a.style==='BASE')))c+=1.4;return c;}
+function makePair(a,b){const ch=pairChem(a,b);const st={};for(const k of STAT_KEYS)st[k]=(a.st[k]*0.62+b.st[k]*0.38)+ch*0.35;const sf={};for(const k of ['H','C','G','I'])sf[k]=((a.sf[k]||0)+(b.sf[k]||0))/2;
+ return {id:a.id,isMe:a.isMe,n:shortPairName(a)+' / '+shortPairName(b),cc:a.cc,st,sf,style:a.style,form:((a.form||0)+(b.form||0))/2,energy:a.isMe?a.energy:100,hand:a.hand,bh1:a.bh1,rank:a.dRank||a.rank,gear:a.gear,mental:a.mental,fyzio:a.fyzio,physio:a.physio,fitness:a.fitness,eq:a.eq,tac:a.tac,pop:a.pop,partner:b.id,pair:true};}
+function shortPairName(p){if(!p)return '?';const parts=String(p.n).split(' ');return parts.length>1?parts[parts.length-1]:p.n;}
+function createDoublesEvent(t,pairMe,opps){const D=16;const list=[pairMe].concat(opps).slice(0,D);while(list.length<D)list.push(null);
+ const ev={id:t.id+'_dbl_'+S.season,tid:t.id,name:t.name+' – čtyřhra',city:t.city,cc:t.cc,tier:t.tier,surf:t.surf,week:S.week,end:S.week+t.len-1,len:t.len,bo:3,rounds:[],cur:0,res:{},done:false,human:true,extra:{},champ:null,ent:list.filter(Boolean).map(x=>x.id||x),dbl:true,size:D,draw:D,nr:4,pm:0};
+ const r0=[];for(let i=0;i<D;i+=2){const A=list[i],B=list[i+1];r0.push({a:A&&(A.id||A),b:B&&(B.id||B),ap:A&&A.pair?A:null,bp:B&&B.pair?B:null,w:null,sets:null});}
+ ev.rounds.push(r0);return ev;}
+
+// --- Davis Cup ---
+const DC_WEEKS={qual:37,fin:48};
+function isDcWeek(w){return w===DC_WEEKS.qual||w===DC_WEEKS.fin;}
+function countryStrength(cc){const top=S.order.map(P).filter(p=>p&&p.cc===cc&&!p.retired).slice(0,3);if(!top.length)return 9999;return top.reduce((a,p)=>a+(p.rank||1200),0)/top.length;}
+function countryRoster(cc,n){return S.order.map(P).filter(p=>p&&p.cc===cc&&!p.retired&&!(p.injury>0)).slice(0,n||4);}
+function ensureDavis(){S.davis=S.davis||{season:S.season,qual:null,fin:null,nom:null};if(S.davis.season!==S.season)S.davis={season:S.season,qual:null,fin:null,nom:null};return S.davis;}
+function maybeNominateDavis(){if(S._silent||!isDcWeek(S.week))return;const me=ME();if(!me||me.banned)return;const d=ensureDavis();if(d.nom&&d.nom.week===S.week&&d.nom.season===S.season)return;
+ const roster=countryRoster(me.cc,6);const idx=roster.findIndex(p=>p.isMe);const phase=S.week===DC_WEEKS.fin?'fin':'qual';
+ if(phase==='fin'&&d.qual&&d.qual.champ&&d.qual.champ!==me.cc&&!(d.qual.finalists||[]).includes(me.cc))return;
+ if(idx<0||idx>3||me.injury>0){d.nom={season:S.season,week:S.week,phase,ok:false,reason:me.injury>0?'zranění':'mimo nominaci'};return;}
+ const nations=[...new Set(S.players.filter(p=>!p.retired).map(p=>p.cc))].filter(c=>c&&c!==me.cc);
+ nations.sort((a,b)=>Math.abs(countryStrength(a)-countryStrength(me.cc))-Math.abs(countryStrength(b)-countryStrength(me.cc)));
+ const opp=nations[0]||'ITA';const surf=S.week===DC_WEEKS.fin?'I':(COUNTRIES[me.cc]&&COUNTRIES[me.cc][2]>40?'I':'C');
+ d.nom={season:S.season,week:S.week,phase,ok:true,accepted:null,opp,surf,idx,teammates:roster.filter(p=>!p.isMe).slice(0,3).map(p=>p.id)};
+ S.davisAlert=true;}
+function acceptDavis(yes){const d=ensureDavis();if(!d.nom||!d.nom.ok)return {ok:false,msg:'Žádná nominace.'};d.nom.accepted=!!yes;saveGame();return {ok:true,msg:yes?'Nominaci přijímáš. Tento týden hraješ za zemi.':'Nominaci odmítáš. Tým hraje bez tebe.'};}
+function setupDavisEvent(){const me=ME();const d=ensureDavis();if(!d.nom||!d.nom.ok||d.nom.accepted!==true||d.nom.week!==S.week)return null;
+ if(S.events.some(e=>e.tier==='DC'&&e.week===S.week))return S.events.find(e=>e.tier==='DC'&&e.week===S.week);
+ const oppC=d.nom.opp;const them=countryRoster(oppC,4);const opp=them[0]||S.players.find(p=>!p.isMe&&!p.retired);
+ const ev={id:'dc_'+S.season+'_'+S.week,tid:'dc',name:`Davis Cup · ${COUNTRIES[me.cc]?COUNTRIES[me.cc][1]:me.cc} vs ${COUNTRIES[oppC]?COUNTRIES[oppC][1]:oppC}`,city:COUNTRIES[me.cc]?['Praha','Bratislava','Vídeň','Paříž'][0]:'—',cc:me.cc,tier:'DC',surf:d.nom.surf||'I',week:S.week,end:S.week,len:1,bo:3,rounds:[[{a:'me',b:opp.id,w:null,sets:null}]],cur:0,res:{},done:false,human:true,extra:{},champ:null,ent:['me',opp.id],size:2,draw:2,nr:1,dc:true,phase:d.nom.phase,oppC,teammates:d.nom.teammates};
+ S.events.push(ev);S.cur={ev:ev.id,stage:'main',status:'alive',qual:null,last:-1,mode:'main'};S.plan={tid:'dc',mode:'main'};return ev;}
+function resolveDavisTie(ev,humanWon){if(ev&&ev._dcPaid)return;if(ev)ev._dcPaid=1;const d=ensureDavis();const me=ME();const mates=(ev.teammates||[]).map(P).filter(Boolean);const them=countryRoster(ev.oppC,3);
+ let us=humanWon?1:0,themS=humanWon?0:1;
+ if(mates[0]&&them[1]){const q=quickMatch(mates[0],them[1],ev.surf,3,ev.cc);if(q.w===mates[0].id)us++;else themS++;}
+ const dblWon=mates[1]&&them[2]?quickMatch(mates[1],them[2],ev.surf,3,ev.cc).w===mates[1].id:RNG()<0.5;if(dblWon)us++;else themS++;
+ const win=us>themS;ev.dcScore=[us,themS];ev.done=true;ev.champ=win?'me':null;
+ const prize=ev.phase==='fin'?(win?80000:25000):(win?28000:8000);
+ ev.myPrize=(ev.myPrize||0)+prize;ev.myPts=ev.myPts||0;
+ if(!S._silent){me.money+=prize;me.car.prize=(me.car.prize||0)+prize;addPop(win?(ev.phase==='fin'?8:4):(ev.phase==='fin'?1:0.4));
+  S.news.unshift({w:S.week,s:S.season,t:`🏳️ Davis Cup: ${COUNTRIES[me.cc][1]} ${us}:${themS} ${COUNTRIES[ev.oppC]?COUNTRIES[ev.oppC][1]:ev.oppC}${win?' — výhra!':'.'} ${fmtMoney(prize)} od svazu.`});}
+ me.car.davis=me.car.davis||{p:0,w:0,l:0};me.car.davis.p++;if(win)me.car.davis.w++;else me.car.davis.l++;
+ if(ev.phase==='qual'){d.qual=d.qual||{finalists:[]};if(win){d.qual.finalists=d.qual.finalists||[];d.qual.finalists.push(me.cc);d.qual.champ=d.qual.champ||me.cc;}}
+ if(ev.phase==='fin'&&win){d.fin={champ:me.cc};me.car.davis.title=(me.car.davis.title||0)+1;}
+ checkAchievements();}
+
+// --- betting market (in-game currency only) ---
+function fairMatchP(a,b,surf,bo){if(!a||!b)return 0.5;let d=rating(a,surf)-rating(b,surf);const h=(ME()&&a.id==='me'&&ME().h2h[b.id])?ME().h2h[b.id]:null;
+ if(h&&h[0]+h[1]>=2)d+=(h[0]-h[1])*0.7;d+=((a.form||0)-(b.form||0))*0.5;
+ const Q=8.4+Math.abs(d)*0.28;const ps=1/(1+Math.exp(-d/Q));
+ const need=Math.ceil((bo||3)/2);
+ if(need===2)return clamp(ps*ps*(3-2*ps),0.07,0.93);
+ // bo5
+ let p=0;const bin=(n,k)=>{let c=1;for(let i=0;i<k;i++)c=c*(n-i)/(i+1);return c;};
+ for(let k=3;k<=5;k++)for(let lost=0;lost<=k-3&&lost<3;lost++){if(lost+3!==k)continue;p+=bin(k-1,2)*Math.pow(ps,3)*Math.pow(1-ps,lost);}
+ return clamp(p||ps,0.07,0.93);}
+function oddsFromP(p,ov){ov=ov||1.06;const a=clamp(1/(p*ov),1.02,21),b=clamp(1/((1-p)*ov),1.02,21);return {a:Math.round(a*100)/100,b:Math.round(b*100)/100};}
+function fmtOdds(x){return Number(x).toLocaleString('cs-CZ',{minimumFractionDigits:2,maximumFractionDigits:2});}
+function betVolume(t,a,b){const base={GS:1800000,M1000:700000,A500:280000,A250:120000,FIN:900000,C175:35000,C125:25000,C100:18000,C75:12000,C50:8000,M25:3500,M15:1800,DC:60000}[t.tier]||8000;
+ const pop=popOf(a)+popOf(b);return Math.round(base*(0.7+pop/80)*(0.85+RNG()*0.3));}
+function applyMarket(p,shareA){return clamp(p*0.72+shareA*0.28,0.07,0.93);}
+function buildBettingBoard(){if(S._silent)return;const board=[];const seen=new Set();
+ const evs=(S.events||[]).filter(e=>!e.dbl&&!e.dc).concat([]);
+ // also pre-event markets from calendar if week not started draws... after startWeek events exist
+ for(const ev of (S.events||[])){if(ev.dbl||ev.done)continue;const rnd=ev.rounds&&ev.rounds[ev.cur];if(!rnd)continue;
+  const cands=rnd.filter(m=>m.a&&m.b&&!m.w&&!m.void).map(m=>({ev,m,A:P(m.a),B:P(m.b)})).filter(x=>x.A&&x.B);
+  cands.sort((x,y)=>Math.min(rankOf(x.A),rankOf(x.B))-Math.min(rankOf(y.A),rankOf(y.B))||TIERS[y.ev.tier].rankOrd-TIERS[x.ev.tier].rankOrd);
+  for(const c of cands.slice(0,ev.tier==='GS'||ev.tier==='M1000'?3:ev.human?2:1)){
+   const id=ev.id+'__'+(c.m.a)+'_'+(c.m.b);if(seen.has(id))continue;seen.add(id);
+   const p0=fairMatchP(c.A,c.B,ev.surf,ev.bo);let vol=betVolume(ev,c.A,c.B);
+   let fan=0;if(c.A.isMe||c.B.isMe){const me=ME();fan=clamp(0.12+(me.pop||0)/220,0.08,0.45);}
+   let share=clamp((p0>0.5?0.52+ (p0-0.5)*0.7:0.48-(0.5-p0)*0.7)+gauss()*0.06+(c.A.isMe?fan:c.B.isMe?-fan:0),0.18,0.86);
+   const pubA=Math.round(vol*share),pubB=vol-pubA;
+   const p=applyMarket(p0,share);const od=oddsFromP(p);
+   const bettors=Math.max(40,Math.round(vol/18*(0.8+RNG()*0.5)));
+   const it={id,eid:ev.id,tid:ev.tid,name:ev.name,tier:ev.tier,surf:ev.surf,bo:ev.bo,a:c.A.id,b:c.B.id,aN:c.A.n,bN:c.B.n,aCC:c.A.cc,bCC:c.B.cc,p0,p,oddsA:od.a,oddsB:od.b,openA:od.a,openB:od.b,vol,pubA,pubB,bettors,pctA:Math.round(share*100),own:c.A.isMe||c.B.isMe,done:false,w:null};
+   board.push(it);
+  }
+  if(board.length>=10)break;}
+ S.market={week:S.week,season:S.season,items:board};S.bets=S.bets||[];
+ for(const it of board){ensureLiveState(it);if(!it.own&&RNG()<0.75){const g=rint(0,4);for(let i=0;i<g&&!it.liveSt.done;i++)playLiveGame(it);}}
+}
+function findMarket(id){return S.market&&S.market.items?S.market.items.find(x=>x.id===id):null;}
+function maxBetStake(me){return Math.max(0,Math.min(8000,Math.round((me.money||0)*0.22),me.money>0?me.money:0));}
+function placeBet(mid,side,stake,market){const me=ME();const it=findMarket(mid);market=market||'match';if(!it)return {ok:false,msg:'Trh už není k dispozici.'};if(it.own)return {ok:false,msg:'Na vlastní zápas sázet nesmíš – Integritní jednotka tenisu to hlídá.'};if(it.done||(it.liveSt&&it.liveSt.done))return {ok:false,msg:'Zápas už skončil.'};if(market!=='match')ensureLiveState(it);if(market==='set'&&(!it.setM||it.liveSt&&it.liveSt.done))return {ok:false,msg:'Trh na set už není.'};if(market==='game'&&(!it.gameM||it.liveSt&&it.liveSt.done))return {ok:false,msg:'Trh na game už není.'};stake=Math.round(+stake||0);if(stake<50)return {ok:false,msg:'Minimální sázka je $50.'};if(stake>maxBetStake(me))return {ok:false,msg:'Tolik teď vsadit nemůžeš.'};if((S.bets||[]).some(b=>b.mid===mid&&(b.market||'match')===market&&!b.settled))return {ok:false,msg:'Na tento trh už sázku máš.'};
+ const odds=oddsForBet(it,market,side);me.money-=stake;S.bets=S.bets||[];S.bets.push({mid,side,stake,odds,market,week:S.week,season:S.season,settled:false,a:it.a,b:it.b,name:it.name});
+ const bag=market==='set'?it.setM:market==='game'?it.gameM:it;if(side==='a')bag.pubA+=stake;else bag.pubB+=stake;bag.vol=bag.pubA+bag.pubB;bag.pctA=Math.round(bag.pubA/bag.vol*100);if(market==='match'){const p=applyMarket(it.p0||liveWinP(it),it.pubA/it.vol);const od=oddsFromP(p);it.oddsA=od.a;it.oddsB=od.b;it.p=p;}else refreshLiveMarkets(it);
+ saveGame();const lab=market==='set'?'na další set':market==='game'?'na další game':'na vítěze zápasu';return {ok:true,msg:`Live sázka ${fmtMoney(stake)} ${lab} v kurzu ${fmtOdds(odds)} je podaná. Pouze herní peníze.`};}
+function settleBetsForEvent(ev){if(!S.market||!S.market.items)return;const me=ME();
+ for(const it of S.market.items){if(it.eid!==ev.id||it.done)continue;const last=ev.rounds&&ev.rounds[ev.rounds.length-1]&&ev.rounds[ev.rounds.length-1][0];
+  let w=ev.champ||(last&&last.w)||null;if(!w)continue;it.done=true;it.w=w;
+  const fav=it.p0>=0.5?it.a:it.b;const long=it.p0>=0.5?it.b:it.a;const longOdds=it.p0>=0.5?it.openB:it.openA;
+  if(w===long&&(it.pctA>=62&&long===it.b||it.pctA<=38&&long===it.a||longOdds>=2.8)){
+   const wn=P(w),ln=P(w===it.a?it.b:it.a);if(wn&&ln&&!S._silent)S.news.unshift({w:S.week,s:S.season,t:`📢 Sázkaři v šoku: ${wn.n} obrátil kurz ${fmtOdds(longOdds)} a vyřadil ${ln.n} (${it.name}). Veřejnost byla na favorita.`});}
+  if(it.own&&w==='me'){const under= (it.a==='me'?it.openA:it.openB)>=2.4;if(under)addPop(1.2);}
+ }
+ for(const b of (S.bets||[])){if(b.settled||b.mid.indexOf(ev.id+'__')!==0)continue;const it=findMarket(b.mid);if(!it||!it.done)continue;b.settled=true;const win=(b.side==='a'&&it.w===it.a)||(b.side==='b'&&it.w===it.b);
+  if(win){const ret=Math.round(b.stake*b.odds);b.payout=ret;me.money+=ret;b.result='win';if(!S._silent)S.news.unshift({w:S.week,s:S.season,t:`🎲 Vyhraná sázka: ${fmtMoney(ret)} (kurz ${fmtOdds(b.odds)}) na zápase ${it.name}.`});}
+  else{b.payout=0;b.result='lose';}}
+}
+function liveOddsForMatch(m,ev){if(!m||!m.p)return null;const A=m.p[0],B=m.p[1];let p=fairMatchP(A,B,m.surf,m.bo);
+ const need=m.need,sa=m.setsW[0],sb=m.setsW[1];
+ if(m.done)p=m.winner===0?0.99:0.01;
+ else{const remA=need-sa,remB=need-sb;if(sa>sb)p=clamp(p+0.12+(sa-sb)*0.1,0.08,0.95);else if(sb>sa)p=clamp(p-0.12-(sb-sa)*0.1,0.05,0.92);
+  const gd=m.g[0]-m.g[1];p=clamp(p+gd*0.025,0.06,0.94);}
+ let it=S.market&&S.market.items&&S.market.items.find(x=>x.own&&(x.a==='me'||x.b==='me')&&(!ev||x.eid===ev.id));
+ const od=oddsFromP(p,1.05);
+ if(it){it.p=p;it.oddsA=it.a==='me'?od.a:od.b;it.oddsB=it.a==='me'?od.b:od.a;it.live=true;}
+ return {p,me:od.a,opp:od.b,it};}
+
+// --- settings (player figures in match view) ---
+function gameSettings(){S.set=S.set||{showPl:false};if(S.set.showPl==null)S.set.showPl=false;return S.set;}
+function showPlayersOn(){return !!gameSettings().showPl;}
+function setShowPlayers(on){gameSettings().showPl=!!on;if(typeof saveGame==='function')saveGame();if(typeof applyShowPlayers==='function')applyShowPlayers();return gameSettings().showPl;}
+
+// --- live / in-play betting ---
+function holdP(srv,ret,surf){const d=(rating(srv,surf)-rating(ret,surf));return clamp(0.79+d*0.011,0.52,0.93);}
+function freshLiveSt(it){return {sa:0,sb:0,ga:0,gb:0,sets:[],server:RNG()<0.5?0:1,need:Math.ceil((it.bo||3)/2),done:false,w:null};}
+function ensureLiveState(it){if(!it)return null;if(!it.liveSt)it.liveSt=freshLiveSt(it);refreshLiveMarkets(it);return it.liveSt;}
+function liveScoreTxt(st){if(!st)return '0:0';const done=st.sets.map(s=>s[0]+'–'+s[1]);if(!st.done)done.push(st.ga+'–'+st.gb);return done.join(' ')||'0–0';}
+function liveWinP(it){const st=it.liveSt,A=P(it.a),B=P(it.b);let p=it.p0||fairMatchP(A,B,it.surf,it.bo);if(!st)return p;if(st.done)return st.w===it.a?0.99:0.01;return clamp(p+(st.sa-st.sb)*0.14+(st.ga-st.gb)*0.03,0.06,0.94);}
+function liveSetP(it){const st=it.liveSt;let p=it.p0||0.5;if(!st||st.done)return p;return clamp(p+(st.ga-st.gb)*0.065,0.12,0.88);}
+function liveGameP(it){const st=it.liveSt;if(!st||st.done)return 0.5;const A=P(it.a),B=P(it.b);const hp=holdP(st.server===0?A:B,st.server===0?B:A,it.surf);return st.server===0?hp:(1-hp);}
+function setLiveOdds(bag,p){const od=oddsFromP(clamp(p,0.07,0.93),1.05);bag.p=p;bag.oddsA=od.a;bag.oddsB=od.b;return bag;}
+function refreshLiveMarkets(it){if(!it)return;const st=it.liveSt;const p=applyMarket(liveWinP(it),it.vol?it.pubA/it.vol:0.5);setLiveOdds(it,p);it.pctA=it.vol?Math.round(it.pubA/it.vol*100):50;
+ const sp=liveSetP(it);it.setM=it.setM||{pubA:Math.round((it.vol||1000)*0.08),pubB:0,vol:0,bettors:Math.max(12,Math.round((it.bettors||40)*0.2))};it.setM.pubB=it.setM.pubB||Math.max(80,Math.round(it.setM.pubA*((1-sp)/Math.max(sp,0.08))));it.setM.vol=it.setM.pubA+it.setM.pubB;it.setM.pctA=Math.round(it.setM.pubA/it.setM.vol*100);it.setM.n=(st?st.sa+st.sb:0)+1;setLiveOdds(it.setM,applyMarket(sp,it.setM.pubA/it.setM.vol));
+ const gp=liveGameP(it);it.gameM=it.gameM||{pubA:Math.round((it.vol||1000)*0.04),pubB:0,vol:0,bettors:Math.max(8,Math.round((it.bettors||40)*0.12))};it.gameM.pubB=it.gameM.pubB||Math.max(50,Math.round(it.gameM.pubA*((1-gp)/Math.max(gp,0.08))));it.gameM.vol=it.gameM.pubA+it.gameM.pubB;it.gameM.pctA=Math.round(it.gameM.pubA/it.gameM.vol*100);it.gameM.srv=st?st.server:0;setLiveOdds(it.gameM,applyMarket(gp,it.gameM.pubA/it.gameM.vol));}
+function steamBag(bag,side,base,kind){const mul=kind==='set'?1.4:kind==='break'?1.15:1;const add=Math.max(40,Math.round(base*mul*(0.7+RNG()*0.7)));const w=kind==='set'?0.72:kind==='break'?0.68:0.58;const aw=Math.round(add*w),al=add-aw;if(side===0){bag.pubA=(bag.pubA||0)+aw;bag.pubB=(bag.pubB||0)+al;}else{bag.pubB=(bag.pubB||0)+aw;bag.pubA=(bag.pubA||0)+al;}bag.vol=(bag.pubA||0)+(bag.pubB||0);bag.bettors=(bag.bettors||0)+rint(4,24);bag.pctA=bag.vol?Math.round(bag.pubA/bag.vol*100):50;}
+function steamLive(it,ev){if(!it||it.done)return;const kind=ev&&ev.match?'set':(ev&&ev.set!=null?'set':(ev&&ev.brk?'break':'game'));const side=ev&&(ev.set!=null?ev.set:ev.game);if(side==null)return;
+ steamBag(it,side,Math.max(200,it.vol*0.045),kind);
+ if(it.setM&&ev.set==null&&!it.liveSt.done)steamBag(it.setM,side,Math.max(80,it.setM.vol*0.1),'game');
+ if(it.shady&&it.own){const against=it.a==='me'?1:0;const extra=Math.round(it.vol*0.03);if(against===0)it.pubA+=extra;else it.pubB+=extra;it.vol=it.pubA+it.pubB;it.pctA=Math.round(it.pubA/it.vol*100);}
+ refreshLiveMarkets(it);}
+function resetUnitMarket(it,which){const vol=which==='set'?(it.vol||2000)*0.08:(it.vol||2000)*0.04;const bag={pubA:Math.round(vol*(0.45+RNG()*0.1)),pubB:0,vol:0,bettors:rint(8,30)};bag.pubB=Math.max(40,Math.round(bag.pubA*(0.7+RNG()*0.6)));bag.vol=bag.pubA+bag.pubB;if(which==='set')it.setM=bag;else it.gameM=bag;refreshLiveMarkets(it);}
+function settleLiveUnits(it,ev){if(!it)return;const me=ME();
+ const pay=(b,win)=>{if(b.settled)return;b.settled=true;if(win){const ret=Math.round(b.stake*b.odds);b.payout=ret;b.result='win';if(me)me.money+=ret;}else{b.payout=0;b.result='lose';}};
+ if(ev&&ev.game!=null){for(const b of (S.bets||[])){if(b.settled||b.mid!==it.id||b.market!=='game')continue;pay(b,(b.side==='a'&&ev.game===0)||(b.side==='b'&&ev.game===1));}if(!it.liveSt.done)resetUnitMarket(it,'game');}
+ if(ev&&ev.set!=null){for(const b of (S.bets||[])){if(b.settled||b.mid!==it.id||b.market!=='set')continue;pay(b,(b.side==='a'&&ev.set===0)||(b.side==='b'&&ev.set===1));}if(!it.liveSt.done)resetUnitMarket(it,'set');}
+ if(ev&&(ev.match||(it.liveSt&&it.liveSt.done))){it.done=true;it.w=it.liveSt&&it.liveSt.w;for(const b of (S.bets||[])){if(b.settled||b.mid!==it.id)continue;if(b.market==='match'||!b.market){pay(b,(b.side==='a'&&it.w===it.a)||(b.side==='b'&&it.w===it.b));}else if(!b.settled)pay(b,false);}}
+}
+function playLiveGame(it){const st=ensureLiveState(it);if(!st||st.done)return null;const A=P(it.a),B=P(it.b);if(!A||!B){st.done=true;return null;}
+ let won,tb=st.ga>=6&&st.gb>=6;
+ if(tb){const p=clamp(0.5+(rating(A,it.surf)-rating(B,it.surf))*0.012,0.2,0.8);won=RNG()<p?0:1;st.ga=won===0?7:6;st.gb=won===1?7:6;}
+ else{const held=RNG()<holdP(st.server===0?A:B,st.server===0?B:A,it.surf);won=held?st.server:(1-st.server);if(won===0)st.ga++;else st.gb++;}
+ const brk=!tb&&won!==st.server;
+ let setW=null,match=false;
+ if((st.ga>=6&&st.ga-st.gb>=2)||(st.gb>=6&&st.gb-st.ga>=2)||st.ga===7||st.gb===7){setW=st.ga>st.gb?0:1;st.sets.push([st.ga,st.gb]);if(setW===0)st.sa++;else st.sb++;st.ga=0;st.gb=0;if(st.sa>=st.need||st.sb>=st.need){st.done=true;st.w=st.sa>st.sb?it.a:it.b;it.done=true;it.w=st.w;match=true;}}
+ st.server=1-st.server;const ev={game:won,brk,set:setW,match};steamLive(it,ev);settleLiveUnits(it,ev);return ev;}
+function tickLiveMarkets(n){if(S._silent||!S.market||!S.market.items)return;n=n||1;
+ for(const it of S.market.items){if(it.own||it.done)continue;ensureLiveState(it);const k=n+(RNG()<0.3?1:0);for(let i=0;i<k&&!it.liveSt.done;i++)playLiveGame(it);}}
+function topUpBettingBoard(){if(S._silent||!S.market)return;S.market.items=S.market.items||[];
+ for(const ev of (S.events||[])){if(ev.dbl||ev.done)continue;const rnd=ev.rounds&&ev.rounds[ev.cur];if(!rnd)continue;
+  for(const m of rnd){if(!m.a||!m.b||m.w||m.void)continue;const A=P(m.a),B=P(m.b);if(!A||!B)continue;
+   const id=ev.id+'__'+m.a+'_'+m.b;if(S.market.items.some(x=>x.id===id))continue;
+   if(S.market.items.filter(x=>!x.done).length>=12)return;
+   const p0=fairMatchP(A,B,ev.surf,ev.bo);let vol=Math.round(betVolume(ev,A,B)*0.55);let share=clamp(p0*0.85+0.08+gauss()*0.05,0.18,0.86);
+   const pubA=Math.round(vol*share),pubB=vol-pubA;const p=applyMarket(p0,share);const od=oddsFromP(p);
+   const it={id,eid:ev.id,tid:ev.tid,name:ev.name,tier:ev.tier,surf:ev.surf,bo:ev.bo,a:A.id,b:B.id,aN:A.n,bN:B.n,aCC:A.cc,bCC:B.cc,p0,p,oddsA:od.a,oddsB:od.b,openA:od.a,openB:od.b,vol,pubA,pubB,bettors:Math.max(30,Math.round(vol/20)),pctA:Math.round(share*100),own:A.isMe||B.isMe,done:false,w:null};
+   ensureLiveState(it);if(!it.own&&RNG()<0.7){const g=rint(0,3);for(let i=0;i<g&&!it.liveSt.done;i++)playLiveGame(it);}
+   S.market.items.push(it);}}}
+function oddsForBet(it,market,side){const bag=market==='set'?it.setM:market==='game'?it.gameM:it;return side==='a'?bag.oddsA:bag.oddsB;}
+
+function onHumanLiveKey(m,r){if(!r||!r.event||S._silent)return;const ev=r.event;if(ev.game==null&&ev.set==null&&!m.done)return;
+ const it=S.market&&S.market.items&&S.market.items.find(x=>x.own&&(x.a==='me'||x.b==='me'));
+ if(it){ensureLiveState(it);const meIsA=it.a==='me';const map=i=>((i===0)===meIsA)?0:1;
+  if(ev.game!=null){const oldSrv=1-m.server;const brk=ev.game!==oldSrv;const side=map(ev.game);steamLive(it,{game:side,brk,set:ev.set!=null?map(ev.set):null,match:!!m.done});
+   const st=it.liveSt;st.sa=m.setsW[0];st.sb=m.setsW[1];st.ga=m.g[0];st.gb=m.g[1];st.sets=m.sets.map(s=>meIsA?s:[s[1],s[0],s[2]]);st.server=m.server;if(m.done){st.done=true;st.w=m.winner===0?it.a:it.b;it.done=true;it.w=st.w;settleLiveUnits(it,{match:true});}}
+  else if(ev.set!=null){steamLive(it,{set:map(ev.set),match:!!m.done});}}
+ tickLiveMarkets(ev.set!=null?2:1);}
+
+
+function ensureIntegrity(me){me=me||ME();if(!me)return null;me.intg=me.intg||{rep:70,fixes:0,reports:0,flags:0,cool:0,off:null,jobs:[],banned:null};return me.intg;}
+function isBanned(me){const b=(me||ME())&& (me||ME()).intg&& (me||ME()).intg.banned;if(!b)return false;if(b.life)return true;const now=S.season*52+S.week;return now<b.until;}
+function banWeeksLeft(me){const b=me.intg&&me.intg.banned;if(!b)return 0;if(b.life)return 9999;return Math.max(0,b.until-(S.season*52+S.week));}
+function fixOfferChance(ev,me){const t=ev&&ev.tier;const base={M15:.09,M25:.07,C50:.05,C75:.035,C100:.022,C125:.012,C175:.01,A250:.004}[t]||0;if(!base)return 0;
+ let r=base;if((me.money||0)<8000)r*=1.55;else if(me.money<25000)r*=1.15;else r*=0.65;
+ if(!me.rank||me.rank>400)r*=1.25;else if(me.rank>200)r*=1;else r*=0.45;
+ const ig=ensureIntegrity(me);if(ig.reports>0)r*=0.28;if(ig.cool>S.season*52+S.week)r*=0;if(ig.off&&ig.off.s===S.season&&ig.off.w===S.week)r=0;return r;}
+function maybeCreateFixOffer(ev,opp){const me=ME();if(!me||S._silent||!ev||ev.dc||ev.dbl)return null;if(isBanned(me))return null;const ig=ensureIntegrity(me);
+ if(ig.off&&ig.off.open)return ig.off;if(RNG()>=fixOfferChance(ev,me))return null;
+ const typ=RNG()<0.45?'set':(RNG()<0.55?'game':'match');
+ const amt0={M15:1200,M25:1800,C50:3200,C75:4500,C100:7000,C125:9000,C175:11000,A250:18000}[ev.tier]||2000;
+ const mul=typ==='match'?1.6:typ==='set'?1:0.6;const amt=Math.round(amt0*mul*(0.85+RNG()*0.4)/50)*50;
+ const txt={set:'prohrál první set',game:'ztratil jednu servisovou hru',match:'zápas nedotáhl do výhry'}[typ];
+ ig.off={open:1,typ,amt,txt,eid:ev.id,opp:opp&&opp.id,oppN:opp&&opp.n,tier:ev.tier,name:ev.name,s:S.season,w:S.week};S.fixAlert=true;return ig.off;}
+function respondFix(choice){const me=ME();const ig=ensureIntegrity(me);const o=ig.off;if(!o||!o.open)return {ok:false,msg:'Nabídka už neplatí.'};o.open=0;o.choice=choice;ig.cool=S.season*52+S.week+8;
+ if(choice==='refuse'){ig.rep=clamp(ig.rep+2,0,100);saveGame();return {ok:true,msg:'Nabídku odmítáš. Žádné peníze, žádný dluh.'};}
+ if(choice==='report'){ig.rep=clamp(ig.rep+14,0,100);ig.reports++;ig.cool=S.season*52+S.week+24;addPop(2.2);const caught=RNG()<0.55;
+  S.news.unshift({w:S.week,s:S.season,t:caught?`🛡️ ${IJT} děkuje za oznámení. Anonymní síť u ${o.name} se podařilo narušit.`:`🛡️ Nahlásil jsi pokus o ovlivnění zápasu ${IJT}. Případ se vyšetřuje.`});
+  checkAchievements();saveGame();return {ok:true,msg:caught?`Nahlášeno. ${IJT} případ bere vážně a část sítě zasáhla.`:`Nahlášeno. ${IJT} má tvé svědectví.`};}
+ if(choice==='accept'){ig.fixes++;ig.rep=clamp(ig.rep-18,0,100);const half=Math.round(o.amt*0.45);me.money+=half;o.paid=half;o.active=1;S.fixJob={typ:o.typ,amt:o.amt,eid:o.eid,opp:o.opp,half};
+  S.news.unshift({w:S.week,s:S.season,t:'📩 Přišly herní peníze z anonymního zdroje. Na sázkovém trhu se začínají dít divné věci.'});
+  tiltMarketForFix(o);saveGame();return {ok:true,msg:`Přijímáš. Záloha ${fmtMoney(half)} je na účtu. Druhá část přijde, jen když „splníš“ úkol – a riskuješ zákaz startu i konec kariéry.`};}
+ return {ok:false,msg:'Neplatná volba'};}
+function tiltMarketForFix(o){if(!S.market||!S.market.items||!o)return;const it=S.market.items.find(x=>x.own&&x.eid===o.eid)||S.market.items.find(x=>x.own);
+ if(!it)return;const shady=Math.round(it.vol*(0.35+RNG()*0.35));
+ if(it.a==='me'){it.pubB+=shady;}else{it.pubA+=shady;}it.vol=it.pubA+it.pubB;it.pctA=Math.round(it.pubA/it.vol*100);it.shady=1;
+ const p=applyMarket(it.p0,it.pubA/it.vol);const od=oddsFromP(p);it.oddsA=od.a;it.oddsB=od.b;it.p=p;}
+function fixFulfilled(m,job){if(!m||!job)return false;if(job.typ==='match')return m.winner!==0;if(job.typ==='set')return (m.setsW[1]||0)>=1||m.winner!==0;if(job.typ==='game')return (m.st[0].srvGames||0)>(m.st[0].srvHeld||0)||m.winner!==0;return false;}
+function resolveFixJob(m){const me=ME();const ig=ensureIntegrity(me);const job=S.fixJob;if(!job||!ig.off)return;const ok=fixFulfilled(m,job);
+ if(ok){const rest=job.amt- (ig.off.paid||0);if(rest>0)me.money+=rest;ig.off.active=0;ig.off.done='ok';ig.flags++;S.news.unshift({w:S.week,s:S.season,t:'💸 Došla druhá část anonymní částky. Na trhu se tohle bude pamatovat.'});}
+ else{ig.off.done='fail';ig.off.active=0;ig.flags+=2;S.news.unshift({w:S.week,s:S.season,t:'📩 Anonymní kontakt je nespokojený – úkol nebyl splněný. Podezření ale zůstává.'});}
+ S.fixJob=null;saveGame();}
+function integrityTick(){if(S._silent)return;const me=ME();if(!me)return;const ig=ensureIntegrity(me);if(isBanned(me)){if(!ig.banned.life&&banWeeksLeft(me)<=0){ig.banned=null;S.news.unshift({w:S.week,s:S.season,t:'✅ Zákaz startu vypršel. Můžeš se vrátit na okruh – pod dohledem.'});}return;}
+ if(ig.fixes<=0&&ig.flags<=0)return;const p=clamp(0.04*ig.fixes+0.035*ig.flags+(ig.off&&ig.off.done==='ok'?0.05:0)-ig.reports*0.01,0,0.55);
+ if(RNG()>p)return;startInvestigation();}
+function startInvestigation(){const me=ME();const ig=ensureIntegrity(me);const ev=1*ig.fixes+0.6*ig.flags-0.4*ig.reports;let kind='fine',weeks=0,fine=0,life=false;
+ if(ev>=4.5||ig.fixes>=3){kind='life';life=true;}
+ else if(ev>=2.8||ig.fixes>=2){kind='long';weeks=rint(26,78);}
+ else if(ev>=1.4){kind='short';weeks=rint(6,18);fine=Math.max(4000,Math.round(me.money*0.25));}
+ else{kind='fine';fine=Math.max(2000,Math.round(1500+ig.fixes*4000));}
+ if(fine){me.money-=fine;if(me.money<-2000)me.money=-2000;}
+ if(life||weeks){for(const sp of Object.keys(me.spons||{}))if(me.spons[sp])me.spons[sp].on=false;}
+ addPop(life?-35:(weeks>=26?-22:(weeks? -12:-6)));
+ ig.banned=life?{life:true,reason:'Ovlivňování zápasů',s:S.season,w:S.week}:{life:false,until:S.season*52+S.week+weeks,weeks,reason:'Ovlivňování zápasů',s:S.season,w:S.week};
+ ig.fixes=0;ig.flags=0;me.retired=!!life;
+ const msg=life?`🚫 ${IJT} ti za ovlivňování zápasů uděluje doživotní zákaz. Kariéra na okruhu končí.`:weeks?`🚫 ${IJT} ti zakazuje start na ${weeks} týdnů${fine?' a ukládá pokutu '+fmtMoney(fine):''}. Sponzoři odcházejí.`:`⚠️ ${IJT} ti uděluje pokutu ${fmtMoney(fine)} a důtku. Další pochybení by skončilo zákazem.`;
+ S.news.unshift({w:S.week,s:S.season,t:msg});S.invAlert={kind,weeks,fine,life,msg};saveGame();checkAchievements();}
+
+// wrap Match edge for tanking + rivalry nerves
+(function(){if(typeof Match==='undefined')return;const _be=Match.prototype.baseEdge;Match.prototype.baseEdge=function(s,r,A,B){const out=_be.call(this,s,r,A,B);
+  const job=this.o&&this.o.fixJob;if(job&&this.p[0]&&this.p[0].isMe&&!this.fixDone){let need=false;if(job.typ==='match')need=true;else if(job.typ==='set'&&(this.setsW[1]||0)<1)need=true;else if(job.typ==='game'&&!this.fixGameDone)need=true;
+   if(need){const hum=s===0;out.d+=(hum?-0.085:0.085);}
+  }
+  if(this.p[0]&&this.p[0].isMe&&this.p[1]&&isRival(this.p[1].id)){out.d+= (s===0?0.006:-0.006);}
+  if(this.p[0]&&this.p[0].isMe){const sb=gearSurfBonus(this.p[0],this.surf);if(sb)out.d+=(s===0?sb:-sb)*0.002;}
+  return out;};
+ const _sc=Match.prototype.score;Match.prototype.score=function(w){const ev=_sc.call(this,w);const job=this.o&&this.o.fixJob;if(job&&job.typ==='game'&&ev&&ev.game!=null&&ev.game===1)this.fixGameDone=1;return ev;};
+})();
+
+function v6EnsurePlayer(p){if(!p||!p.isMe)return;p.fitness=p.fitness!=null?p.fitness:(p.fyzio||0);p.physio=p.physio!=null?p.physio:(p.fyzio||0);p.manager=p.manager||0;p.eq=p.eq||{raketa:'all',boty:'all',vyplet:'all'};p.dpw=p.dpw||new Array(52).fill(0);p.intg=p.intg||{rep:70,fixes:0,reports:0,flags:0,cool:0,off:null,jobs:[],banned:null};p.sponsOff=p.sponsOff||[];if(p.car&&!p.car.davis)p.car.davis={p:0,w:0,l:0,title:0};}
+function v6Migrate(s){if(!s)return s;if(s.players){for(const p of s.players){if(!p.dpw)p.dpw=new Array(52).fill(0);if(p.isMe)v6EnsurePlayer(p);}}
+ s.bets=s.bets||[];s.market=s.market||null;s.davis=s.davis||null;s.set=s.set||{showPl:false};if(s.set.showPl==null)s.set.showPl=false;if(s.v<6)s.v=6;return s;}
+function v6AfterNewGame(){const me=ME();v6EnsurePlayer(me);initDoublesPoints();S.bets=[];S.market=null;S.davis={season:S.season,qual:null,fin:null,nom:null};S.set={showPl:false};}
+function v6AfterStartWeek(silent){if(silent||S._silent)return;setupDavisEvent();buildBettingBoard();const ev=humanEvent();if(ev&&S.plan&&S.plan.dbl)startHumanDoubles(ev);}
+function startHumanDoubles(sing){const t=CAL_BY_ID[sing.tid];const me=ME();if(!t||!S.plan||!S.plan.dbl)return;const part=P(S.plan.dbl);if(!part)return;
+ const pair=makePair(me,part);const opps=[];const pool=S.order.map(P).filter(p=>p&&!p.isMe&&p.id!==part.id&&!p.retired&&!(p.injury>0)).slice(0,40);
+ for(let i=0;i<15;i+=2){const a=pool[i],b=pool[i+1]||pool[0];if(a&&b)opps.push(makePair(a,b));}
+ const ev=createDoublesEvent(t,pair,opps);S.events.push(ev);S.curDbl={ev:ev.id,partner:part.id,status:'alive'};}
+
+function v6FinalizeDoubles(ev,earned){if(!ev.dbl)return;let g=0;while(!ev.done&&g++<20){for(const m of ev.rounds[ev.cur]){if(m.w||m.void)continue;if(!m.a||!m.b){m.w=m.a||m.b;continue;}
+  if((m.a==='me'||m.b==='me')&&S.curDbl&&S.curDbl.status==='alive'&&!S._silent){/* wait for human, but at week end auto-sim remaining */}
+  const A=m.ap||P(m.a),B=m.bp||P(m.b);if(!A||!B){m.w=m.a||m.b;continue;}const q=quickMatch(A,B,ev.surf,3,ev.cc);m.w=q.w;m.sets=q.sets;}
+ if(ev.rounds[ev.cur].every(m=>m.w||m.void)){if(ev.rounds[ev.cur].length===1){ev.champ=ev.rounds[ev.cur][0].w;ev.done=true;ev.res[ev.champ]=ev.nr;}
+  else{const r=ev.rounds[ev.cur];const nx=[];for(let i=0;i<r.length;i+=2)nx.push({a:r[i].w,b:r[i+1].w,w:null,sets:null});ev.cur++;ev.rounds.push(nx);}}
+ }
+ const week=S.week-1>=0?S.week-1:0;
+ for(const id in ev.res){const res=ev.res[id];const idx=Math.max(0,ev.nr-res);const pts=dblPtsFor(ev.tier,idx);const p=P(id);if(p){p.dpw=p.dpw||new Array(52).fill(0);p.dpw[week]=(p.dpw[week]||0)+pts;}}
+ if(ev.champ){const w=P(ev.champ);if(w){w.dsw=(w.dsw||0)+1;if(w.isMe){ME().car.dtitles=(ME().car.dtitles||0)+1;ME().car.dblTitleList=ME().car.dblTitleList||[];ME().car.dblTitleList.push({s:S.season,name:ev.name,tier:ev.tier});if(!S._silent)S.news.unshift({w:S.week,s:S.season,t:`🤝 Titul ve čtyřhře! ${ev.name}`});}}}
+ computeDRanks();checkAchievements();}
+
+function v6AfterEndWeek(silent,earned){if(silent||S._silent)return;
+ for(const ev of (S._endedNow||[])){settleBetsForEvent(ev);if(ev.dbl)v6FinalizeDoubles(ev,earned);if(ev.dc&&ev.human&&ev.done){/* score already resolved */}}
+ integrityTick();updateSponsors(ME());computeDRanks();
+ const me=ME();if(me&&me.money<-5000){let fired=false;for(const k of ['manager','mental','fitness','physio']){if(staffLvl(me,k)>0){me[k]=0;if(k==='physio')me.fyzio=0;fired=true;}}if(me.coach>1){me.coach=1;fired=true;}if(fired)S.news.unshift({w:S.week,s:S.season,t:'💸 Došly peníze — část týmu jsi musel propustit.'});}
+}
+
+function v6OnHumanMatch(ev,oppId,won){noteRivalry(oppId,won);}
+function v6OnEventFinished(ev){if(!ev.dc)paySponsorBonuses(ev,ev.champ==='me');if(ev.dc&&!ev._dcResolved)resolveDavisTie(ev,ev.champ==='me');}
+
+// energy helpers used by endWeek override bits
+function v6EnergyGain(me,played){const fit=staffLvl(me,'fitness'),ph=staffLvl(me,'physio');return (played?34:50)+ph*5+fit*6;}
+
+// --- achievements & engine hooks (v6 loads after engine.js) ---
+Object.assign(ACH,{
+ dbl_title:['Titul ve čtyřhře','Vyhraj turnaj ve čtyřhře','🤝'],
+ davis:['Reprezentace','Zahraj za zemi v Davis Cupu','🏳️'],
+ davis_win:['Pohár národa','Vyhraj baráž nebo finále Davis Cupu','🏅'],
+ staff_full:['Kompletní tým','Měj trenéra, kondici, fyzio, mentálního kouče i manažera','🧑‍🤝‍🧑'],
+ sponsor3:['Ambassadorská smlouva','Měj tři aktivní sponzory','💼'],
+ clean:['Čistý štít','Nahlas pokus o ovlivnění zápasu Integritní jednotce tenisu','🛡️']
+});
+const _checkAch=checkAchievements;
+checkAchievements=function(){_checkAch();const me=ME();if(!me||S._silent)return;const a=me.ach;const got=k=>{if(!a[k]){a[k]={s:S.season,w:S.week};S.news.unshift({w:S.week,s:S.season,t:`🏅 Úspěch: ${ACH[k][0]}`});}};
+ if((me.car.dtitles||0)>0||(me.car.dblTitleList||[]).length)got('dbl_title');
+ if(me.car.davis&&me.car.davis.p>0)got('davis');if(me.car.davis&&(me.car.davis.w>0||me.car.davis.title))got('davis_win');
+ if(staffLvl(me,'coach')>=1&&staffLvl(me,'fitness')>=1&&staffLvl(me,'physio')>=1&&staffLvl(me,'mental')>=1&&staffLvl(me,'manager')>=1)got('staff_full');
+ if(SPONSORS_V6.filter(s=>me.spons&&me.spons[s.id]&&me.spons[s.id].on!==false).length>=3)got('sponsor3');
+ const ig=me.intg;if(ig&&ig.reports>0)got('clean');};
+
+POP_TF.DC=2.2;POP_TITLE.DC=6;
+
+const _startWeek=startWeek;
+startWeek=function(silent){const me=ME();if(me&&isBanned(me)&&S.plan&&S.plan.tid!=='dc')S.plan=null;
+ _startWeek(silent);v6AfterStartWeek(silent);};
+
+const _finalizeEvent=finalizeEvent;
+finalizeEvent=function(ev,earned){
+ if(ev&&ev.dbl){v6FinalizeDoubles(ev,earned);settleBetsForEvent(ev);return;}
+ if(ev&&ev.dc){if(!ev.done){let g=0;while(!ev.done&&g++<8){simRoundAI(ev);if(roundComplete(ev))advanceRound(ev);}}if(ev.champ==='me'||ev.champ){ev.res=ev.res||{};if(ev.champ==='me')ev.res.me=ev.nr||1;}resolveDavisTie(ev,ev.champ==='me');ev._dcResolved=1;if(ev.human)humanEventFinished(ev);settleBetsForEvent(ev);return;}
+ _finalizeEvent(ev,earned);settleBetsForEvent(ev);};
+
+const _recordHumanMatch=recordHumanMatch;
+recordHumanMatch=function(ev,oppId,won,info,isQual){_recordHumanMatch(ev,oppId,won,info,isQual);v6OnHumanMatch(ev,oppId,won);};
+
+const _humanEventFinished=humanEventFinished;
+humanEventFinished=function(ev){_humanEventFinished(ev);v6OnEventFinished(ev);};
+
+const _migrateSave=migrateSave;
+migrateSave=function(s){s=_migrateSave(s);return v6Migrate(s);};
+
+const _loadGame=loadGame;
+loadGame=function(){const ok=_loadGame();if(ok){const me=ME();if(me)v6EnsurePlayer(me);initDoublesPoints();computeDRanks();maybeNominateDavis();}return ok;};
+
+const _newGame=newGame;
+newGame=function(opts){const r=_newGame(opts);v6AfterNewGame();saveGame();return r;};
+
+const _eligibility=eligibility;
+eligibility=function(t,p){p=p||ME();if(p&&isBanned(p)){const left=banWeeksLeft(p);return {mode:null,txt:p.intg&&p.intg.banned&&p.intg.banned.life?('Doživotní zákaz startu od '+IJT+'.'):(`Zákaz startu od ${IJT} — zbývá ${left} týd.`)};}
+ if(t&&t.tier==='DC'){const d=S.davis&&S.davis.nom;if(d&&d.ok&&d.accepted&&d.week===S.week)return {mode:'main',txt:'Nominace do Davis Cupu'};return {mode:null,txt:'Do Davis Cupu se postupuje nominací svazu.'};}
+ return _eligibility(t,p);};
+
+const _endWeek=endWeek;
+endWeek=function(silent){
+ if(!silent){const me=ME();if(me){const _add=me.energy;}}
+ // intercept energy/pop after original by adjusting once it returns? Original already applied fyzio energy.
+ // Run original, then integrity (week already incremented). To keep investigation on the finishing week, tick BEFORE original week++.
+ // We reimplement the late hooks by wrapping weeklyInjuries? Simpler: tick after, news week is next week — acceptable.
+ _endWeek(silent);
+ v6AfterEndWeek(silent);
+ if(!silent){const me=ME();if(me){me.energy=clamp(me.energy+staffLvl(me,'fitness')*6,0,100);const mg=staffLvl(me,'manager');if(mg&&me.pop)me.pop=clamp(me.pop+mg*0.04,0,100);}}
+};
+
+const _simMatchAI=simMatchAI;
+simMatchAI=function(ev,m){if(m.w||m.void)return _simMatchAI(ev,m);
+ const it=S.market&&S.market.items&&S.market.items.find(x=>x.eid===ev.id&&((x.a===m.a&&x.b===m.b)||(x.a===m.b&&x.b===m.a)));
+ if(it&&it.liveSt){ensureLiveState(it);while(!it.liveSt.done)playLiveGame(it);const w=it.liveSt.w;if(!w){return _simMatchAI(ev,m);}
+  const flip=it.a!==m.a;const sets=(it.liveSt.sets||[]).map(s=>flip?[s[1],s[0]]:s);applyResult(ev,m,w,sets);return;}
+ _simMatchAI(ev,m);};
+
 // ===================== UI: core, create, home =====================
 const $=s=>document.querySelector(s);
 const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const UI={tab:'home',mapWeek:null,zoom:'world',rf:'top',rs:'',tt:'tvrdy',speed:4,create:{style:'ALL',hand:'R',bh1:false,look:{skin:'#e8b896',hair:'#3a2a1a',shirt:'#2f7bff'}}};
-const TIER_ICON={GS:'💎',M1000:'👑',A500:'🥈',A250:'🥉',C175:'🏅',C125:'🎾',C100:'🎾',C75:'🎾',C50:'🎾',M25:'🌱',M15:'🌱',FIN:'🌟'};
+const TIER_ICON={GS:'💎',M1000:'👑',A500:'🥈',A250:'🥉',C175:'🏅',C125:'🎾',C100:'🎾',C75:'🎾',C50:'🎾',M25:'🌱',M15:'🌱',FIN:'🌟',DC:'🏳️'};
 function toast(m){const d=document.createElement('div');d.className='toast';d.innerHTML=m;document.body.appendChild(d);setTimeout(()=>d.remove(),2700);}
 function modal(html,lock){closeModal();const bg=document.createElement('div');bg.className='modal-bg';bg.id='mbg';if(lock)bg.dataset.lock=1;bg.innerHTML=`<div class="modal">${html}</div>`;bg.addEventListener('click',e=>{if(e.target===bg&&!bg.dataset.lock)closeModal();});document.body.appendChild(bg);return bg;}
 function closeModal(){const m=$('#mbg');if(m)m.remove();}
@@ -958,6 +1376,7 @@ function render(){
  switch(UI.tab){case 'home':v=renderHome();break;case 'tour':v=renderTour();break;case 'train':v=renderTrain();break;case 'rank':v=renderRank();break;case 'career':v=renderCareer();break;case 'event':v=renderEvent();break;}
  app.innerHTML=renderTop()+`<div class="view">${v}</div>`+renderNav();
  if(UI.tab==='tour')afterTour();
+ if(typeof v6RenderModals==='function')v6RenderModals();
  if(S.injAlert&&!document.getElementById('mbg')&&!document.getElementById('mv'))injAlertModal();
  if(S.seasonRecap&&!document.getElementById('mbg')&&!document.getElementById('mv'))seasonRecapModal();
  if(S.live&&!UI.resumeAsked&&!document.getElementById('mv')){UI.resumeAsked=true;setTimeout(resumePrompt,60);}
@@ -995,12 +1414,14 @@ function renderHome(){const me=ME();const age=S.season-me.by;
  <div class="row" style="margin-top:14px;align-items:center;gap:14px">${ovRing(ovr(me),92,'tenis. úroveň')}<div style="flex:1">${statRows(me,true)}</div></div>
  <div style="margin-top:8px"><div class="row small"><span class="mut">Energie</span><span class="sp"></span><b>${Math.round(me.energy)}/100</b></div><div class="bar en" style="margin-top:4px"><i style="width:${me.energy}%"></i></div></div></div>`;
  h+=weekCard();
+ if(typeof v6HomeCards==='function')h+=v6HomeCards();
  h+=dailyCard();
  if(S.lastWeek){const lw=S.lastWeek;const spn=lw.spn||0;h+=`<div class="card"><h3>📒 Minulý týden</h3><div class="grid2"><div class="tile"><b class="good">+${fmtMoney(spn)}</b><span>Sponzoři (${Object.keys(me.spons||{}).length})</span></div><div class="tile"><b class="good">+${fmtMoney(lw.inc-spn)}</b><span>Bonusy za žebříček</span></div><div class="tile"><b class="bad">-${fmtMoney(lw.cost)}</b><span>Tým</span></div><div class="tile"><b class="gold">+${lw.earned}</b><span>Body ATP</span></div></div></div>`;}
  const nf=UI.newsF||'all';const items=nf==='inj'?S.news.filter(n=>n.inj):S.news;
  h+=`<div class="card"><h3>📰 Zprávy z okruhu<span class="sp"></span><span class="seg-t" style="text-transform:none;letter-spacing:0"><button class="${nf==='all'?'on':''}" onclick="UI.newsF='all';render()">Vše</button><button class="${nf==='inj'?'on':''}" onclick="UI.newsF='inj';render()">🩹 Zranění</button></span></h3>${items.slice(0,12).map(n=>`<div class="news ${n.inj?'injn':''}"><small>T${n.w}/${n.s}</small>${esc(n.t)}</div>`).join('')||'<div class="mut small">Zatím nic.</div>'}${nf==='inj'?`<button class="btn ghost sm" style="width:100%;margin-top:8px" onclick="UI.rf='inj';go('rank')">🏥 Marodka – všichni zranění hráči</button>`:''}</div>`;
  return h;}
 function weekCard(){const me=ME();const ev=humanEvent();
+ if(typeof isBanned==='function'&&isBanned(me)&&(!ev||S.cur&&S.cur.status!=='alive')){const b=me.intg&&me.intg.banned;const life=b&&b.life;return `<div class="card" style="border-color:rgba(255,80,90,.55)"><h3>🚫 Zákaz startu</h3><div class="small">${life?'Doživotní zákaz od Integritní jednotky tenisu. Kariéra na okruhu skončila.':'Integritní jednotka tenisu ti zakázala start. Zbývá <b>'+banWeeksLeft(me)+' týdnů</b>.'}</div>${life?`<button class="btn red" style="margin-top:10px" onclick="confirmBox('Nová hra?','Současná kariéra skončila. Můžeš si prohlédnout statistiky, nebo začít znovu.','Nová kariéra',()=>{resetGame();UI.tab='home';render();})">Začít novou kariéru</button>`:`<button class="btn big" style="margin-top:10px" onclick="uiStartWeek()">Odehrát týden bez turnaje ▶</button>`}</div>`;}
  if(S.cur&&ev&&S.cur.status==='alive'){const nm=humanNextMatch();const o=nm&&nm.opp?P(nm.opp):null;
   return `<div class="card" style="border-color:rgba(255,211,77,.5)"><h3>🎾 Probíhá turnaj<span class="sp"></span>${tierBadge(ev.tier)}</h3><div class="b" style="font-size:17px">${esc(ev.name)}</div><div class="small mut">${flag(ev.cc)} ${esc(ev.city)} · ${SURF[ev.surf].name}</div>
   ${nm?`<div class="row" style="margin:10px 0"><span class="small mut">${nm.round}:</span>${o?`<b>${flag(o.cc)} ${esc(o.n)}</b> <span class="small mut">(${rankTxt(o)})</span>`:'<b>volný los</b>'}</div>`:''}
@@ -1024,7 +1445,7 @@ function evRow(t,compact){const e=eligibility(t);const sel=S.plan&&S.plan.tid===
  let btn='';if(canAct&&t.tier!=='FIN'){btn=e.mode?(sel?`<button class="btn sm green" onclick="event.stopPropagation();S.plan=null;render()">✓</button>`:`<button class="btn sm" onclick="event.stopPropagation();uiPlan('${t.id}')">Přihlásit</button>`):`<span class="tiny mut c" style="width:58px">🔒</span>`;}
  const last=S.results[t.id];
  return `<div class="ev ${sel?'sel':''}" style="--tc:${tier.color}" onclick="evInfo('${t.id}')"><div class="ic">${tierEmblem(t.tier,44)}</div><div class="t"><b>${esc(t.name)}</b><div class="small mut">${flag(t.cc)} ${esc(t.city)}${t.len>1?' · 2 týdny':''}</div><div class="chips">${tierBadge(t.tier)}${surfChip(t.surf)}${t.tier!=='FIN'?`<span class="tiny mut">${tierTab(t).pts[0]} b. · ${fmtMoney(evPrize(t,0))} · ${t.draw}</span>`:'<span class="tiny mut">až 1500 b.</span>'}</div>${!compact&&last?`<div class="tiny mut" style="margin-top:3px">Poslední vítěz: ${esc(last.champN)} (${last.season})</div>`:''}${canAct&&md?`<div class="tiny cy" style="margin-top:2px">${md}</div>`:''}</div>${btn}</div>`;}
-function uiPlan(tid){const t=CAL_BY_ID[tid];const e=eligibility(t);const me=ME();if(me.injury>0){toast('Jsi zraněný.');return;}if(!e.mode){toast(e.txt);return;}const c=travelCost(t);if(me.money-c<-5000){toast('Na cestu nemáš peníze.');return;}S.plan={tid,mode:e.mode};saveGame();closeModal();toast(`Přihlášen: ${t.name}`);render();}
+function uiPlan(tid){const t=CAL_BY_ID[tid];const e=eligibility(t);const me=ME();if(me.injury>0){toast('Jsi zraněný.');return;}if(!e.mode){toast(e.txt);return;}if(typeof isBanned==='function'&&isBanned(me)){toast(e.txt||'Máš zákaz startu.');return;}const c=travelCost(t);if(me.money-c<-5000){toast('Na cestu nemáš peníze.');return;}S.plan={tid,mode:e.mode};saveGame();closeModal();if(typeof doublesAllowed==='function'&&doublesAllowed(t)){showDoublesOptIn(t);return;}toast(`Přihlášen: ${t.name}`);render();}
 function evInfo(tid){const t=CAL_BY_ID[tid];const tier=TIERS[t.tier];const e=eligibility(t);const last=S.results[t.id];const tab=tierTab(t);
  const rounds=[];if(t.tier==='FIN'){rounds.push(['Výhra ve skupině','200 b.','$396 000'],['Výhra v semifinále','+400 b.','$1 183 000'],['Výhra ve finále','+500 b.','$2 370 000'],['Účast','—','$331 000']);}
  else{const B=pow2(t.draw);const nr=Math.log2(B);for(let i=0;i<=nr;i++){const remain=i===0?1:(1<<i);const nm=i===0?'Vítěz':remain===2?'Finále':remain===4?'Semifinále':remain===8?'Čtvrtfinále':remain===B?'1. kolo':'Kolo '+remain;rounds.push([nm,(tab.pts[i]||0)+' b.',fmtMoney(evPrize(t,i))]);}
@@ -1056,6 +1477,7 @@ function weekSummary(before){const me=ME();const idx=before.news?S.news.indexOf(
  modal(`<h2>📆 Týden ${before.week}${S.week-before.week>1?'–'+(S.week-1):''} skončil</h2>
  <div class="grid3"><div class="tile"><b>${me.rank||'—'}</b><span>Žebříček ${dr>0?`<span class="good">▲${dr}</span>`:dr<0?`<span class="bad">▼${-dr}</span>`:''}</span></div><div class="tile"><b class="gold">${fmtNum(totalPts(me))}</b><span>Body (${totalPts(me)-before.pts>=0?'+':''}${totalPts(me)-before.pts})</span></div><div class="tile"><b class="${me.money-before.money>=0?'good':'bad'}">${me.money-before.money>=0?'+':''}${fmtMoney(me.money-before.money)}</b><span>Finance</span></div></div>
  <div style="margin-top:10px">${fresh.map(n=>`<div class="news">${esc(n.t)}</div>`).join('')}</div>
+ ${typeof weekBetSummary==='function'?weekBetSummary(before):''}
  <button class="btn big" style="margin-top:12px" onclick="closeModal()">Pokračovat</button>`);}
 function seasonRecapModal(){const r=S.seasonRecap;if(!r)return;S.seasonRecap=null;saveGame();
  const rec=r.w+r.l?Math.round(r.w/(r.w+r.l)*100):0;
@@ -1065,8 +1487,12 @@ function seasonRecapModal(){const r=S.seasonRecap;if(!r)return;S.seasonRecap=nul
  <div class="small mut" style="margin-top:10px">Nejlepší žebříček v kariéře: <b>${r.best||'—'}</b>. V novém roce se termíny turnajů posunuly a odměny vzrostly o 3,5 %.</div>
  <button class="btn big gold" style="margin-top:14px" onclick="closeModal()">Do nové sezóny ▶</button>`);}
 function uiStartWeek(){const me=ME();
+ if(typeof maybeNominateDavis==='function')maybeNominateDavis();
+ if(S.davisAlert||(S.davis&&S.davis.nom&&S.davis.nom.ok&&S.davis.nom.accepted==null&&S.davis.nom.week===S.week)){showDavisModal();return;}
+ if(typeof isBanned==='function'&&isBanned(me)&&me.intg.banned&&me.intg.banned.life){toast('Kariéra na okruhu skončila.');return;}
  const fin=CAL.find(t=>t.week===S.week&&t.tier==='FIN');const finMe=fin&&me.rank&&me.rank<=8&&me.injury<=0;
- if(S.plan||finMe){const b=snapshot();startWeek();if(S.cur){UI.tab='event';render();return;}weekRun(b);return;}
+ const dc=S.davis&&S.davis.nom&&S.davis.nom.accepted===true&&S.davis.nom.week===S.week;
+ if(S.plan||finMe||dc){const b=snapshot();startWeek();if(S.cur){UI.tab='event';render();return;}weekRun(b);return;}
  confirmBox('Týden bez turnaje?',`Zbývající tréninkové bloky: ${me.slots}. Energie se během týdne doplní.`,'Pokračovat',()=>{const b=snapshot();startWeek();endWeek();weekRun(b,true);});}
 function weekRun(b,done){if(!done)endWeek();UI.tab='home';render();weekSummary(b);}
 function uiAdvance(){const b=snapshot();const n=weeksToAdvance();for(let i=0;i<n;i++)endWeek();S.cur=null;saveGame();UI.tab='home';render();weekSummary(b);}
@@ -1081,7 +1507,7 @@ function startDaily(){const d=getDaily();if(d.done)return;if(UI.busy)return;if(M
  openMatch({opp:o,surf:d.surf,bo:1,title:'Denní výzva · Exhibice',sub:d.txt,daily:true,onEnd:(m)=>{me.energy=saveEn;const ok=dailyCheck(m);d.tries=(d.tries||0)+1;if(ok){d.done=true;me.money+=d.reward.money;const r=addXp(d.reward.stat,d.reward.xp,true);saveGame();return `<div class="good b" style="font-size:17px">⭐ Výzva splněna! +${fmtMoney(d.reward.money)}, +${d.reward.xp} XP ${STAT_NAMES[d.reward.stat]}${r.ups?' ⬆️':''}</div>`;}if(d.tries>=3)d.done='fail';saveGame();return `<div class="bad b">Výzva nesplněna${d.done==='fail'?' – dnešní pokusy vyčerpány.':` – zbývá ${3-d.tries} pokusů.`}</div>`;}});}
 
 function popBar(v){return `<div class="bar" style="height:9px"><i style="width:${v}%;background:linear-gradient(90deg,#ff5d9e,#ffb648)"></i></div>`;}
-function sponsorList(me){return SPONSORS.map(sp=>{const on=me.spons&&me.spons[sp.id];return `<div class="shop" style="${on?'border-color:rgba(62,230,138,.5)':'opacity:.55'}"><div class="si">${sp.icon}</div><div style="flex:1"><b class="small">${sp.name}</b><div class="tiny mut">${sp.desc}</div><div class="tiny ${on?'good':'mut'}">${on?'✓ Aktivní smlouva':'🔒 od popularity '+sp.th}</div></div><b class="small ${on?'good':'mut'}">${fmtMoney(sp.pay)}<span class="tiny">/týd.</span></b></div>`;}).join('');}
+function sponsorList(me){const list=typeof SPONSORS_V6!=='undefined'?SPONSORS_V6:SPONSORS;const mul=typeof sponsorPayMul==='function'?sponsorPayMul(me):1;return list.map(sp=>{const c=me.spons&&me.spons[sp.id];const on=c&&c.on!==false&&!c.declined;const pay=Math.round((c&&c.pay||sp.pay)*mul);const elig=typeof sponsorEligible==='function'?sponsorEligible(sp,me):(me.pop||0)>=sp.th;const pending=(me.sponsOff||[]).some(o=>o.id===sp.id);return `<div class="shop" style="${on?'border-color:rgba(62,230,138,.5)':pending?'border-color:rgba(255,211,77,.45)':'opacity:.55'}"><div class="si">${sp.icon}</div><div style="flex:1"><b class="small">${sp.name}</b><div class="tiny mut">${sp.desc}${sp.win?` · bonus za postup ${fmtMoney(sp.win)}`:''}</div><div class="tiny ${on?'good':pending?'gold':'mut'}">${on?'✓ Aktivní smlouva':pending?'✍️ Čeká na podpis':elig?'Nabídka je na stole':'🔒 od popularity '+sp.th+(sp.rank?' a žebř. ≤ '+sp.rank:'')}</div></div><div class="c">${pending?`<button class="btn sm gold" onclick="uiAcceptSponsor('${sp.id}')">Přijmout</button><button class="btn sm ghost" onclick="uiDeclineSponsor('${sp.id}')">Ne</button>`:''}<b class="small ${on?'good':'mut'}">${fmtMoney(pay)}<span class="tiny">/týd.</span></b></div></div>`;}).join('');}
 function popCard(me){const v=me.pop||0;const next=SPONSORS.find(s=>!(me.spons&&me.spons[s.id]));const ph=me.popHist||[];const mx=Math.max(10,...ph);
  return `<div class="card"><h3>❤️ Popularita<span class="sp"></span><span style="text-transform:none;letter-spacing:0">${fmtFans(followers(v))} fanoušků</span></h3>
  <div class="row"><b style="font-size:30px">${Math.round(v)}</b><div style="flex:1">${popBar(v)}<div class="tiny mut" style="margin-top:4px">${next?`Další sponzor (${next.icon} ${next.name}) při popularitě ${next.th}`:'Máš všechny sponzory!'}</div></div></div>
@@ -1152,9 +1578,9 @@ function renderTrain(){const me=ME();const tt=TRAIN_TYPES[UI.tt];const busy=S.cu
  <div class="small mut" style="margin-top:8px">Trenér úr. ${me.coach} (×${COACH_MULT[me.coach]}) · věkový faktor ×${ageMult(S.season-me.by)}</div></div>`;
  h+=`<div class="tabs">${Object.entries(TRAIN_TYPES).map(([k,t])=>`<button class="${UI.tt===k?'on':''}" onclick="UI.tt='${k}';render()">${t.icon} ${t.name.split(' ')[0]}<div class="tiny" style="opacity:.8">⚡${t.en} · ${fmtMoney(t.cost)}</div></button>`).join('')}</div>`;
  h+=`<div class="card"><h3>${tt.icon} ${tt.name}<span class="sp"></span><span style="text-transform:none;letter-spacing:0" class="small">+${tt.xp} XP základ</span></h3>${STAT_KEYS.map(k=>{const v=me.st[k];return `<div class="trow"><div><div class="row"><b style="width:80px">${STAT_NAMES[k]}</b><span class="b" style="font-size:18px">${Math.round(v)}</span></div><div class="bar xp" style="height:6px"><i style="width:${clamp(me.xp[k]/xpNeed(v)*100,0,100)}%"></i></div><div class="tiny mut">${Math.round(me.xp[k])}/${Math.round(xpNeed(v))} XP</div></div><button class="btn sm" ${me.slots<=0||busy||me.injury>0?'disabled':''} onclick="uiTrain('${k}')">Trénovat</button></div>`;}).join('')}</div>`;
- h+=`<div class="card"><h3>😴 Regenerace</h3><div class="grid2"><button class="opt" onclick="uiRest('rest')"><b>🛌 Odpočinek</b><div class="small mut">+${22+me.fyzio*4} energie · zdarma · 1 blok</div></button><button class="opt" onclick="uiRest('spa')"><b>🧖 Wellness & fyzio</b><div class="small mut">+${40+me.fyzio*5} energie · $450 · 1 blok</div></button></div></div>`;
+ h+=`<div class="card"><h3>😴 Regenerace</h3><div class="grid2"><button class="opt" onclick="uiRest('rest')"><b>🛌 Odpočinek</b><div class="small mut">+${22+(me.physio!=null?me.physio:me.fyzio)*4+(me.fitness||0)*3} energie · zdarma · 1 blok</div></button><button class="opt" onclick="uiRest('spa')"><b>🧖 Wellness & fyzio</b><div class="small mut">+${40+(me.physio!=null?me.physio:me.fyzio)*5+(me.fitness||0)*4} energie · $450 · 1 blok</div></button></div></div>`;
  h+=`<div class="card"><h3>📣 Média a fanoušci<span class="sp"></span><span style="text-transform:none;letter-spacing:0">❤️ ${Math.round(me.pop||0)}</span></h3><div class="small mut" style="margin-bottom:8px">Každá aktivita stojí 1 tréninkový blok (jednou týdně). Zvyšuje popularitu → sponzoři, divoké karty a publikum.</div><div class="grid2">${Object.entries(MEDIA).map(([k,m])=>{const lock=(me.pop||0)<m.min;const done=me.mediaW&&me.mediaW[k]===S.season*100+S.week;return `<button class="opt" style="${lock||done?'opacity:.5':''}" onclick="uiMedia('${k}')"><b>${m.icon} ${m.name}</b><div class="tiny mut">${m.desc}</div><div class="tiny cy">⚡${m.en}${m.cost?' · '+fmtMoney(m.cost):''} · ❤️ +${m.pop}${lock?' · 🔒 pop. '+m.min:''}${done?' · ✓ hotovo':''}</div></button>`;}).join('')}</div></div>`;
- h+=`<div class="card"><h3>🧑‍🤝‍🧑 Tým a vybavení<span class="sp"></span><span class="small" style="text-transform:none;letter-spacing:0">týdně ${fmtMoney(weeklyCosts(me))}</span></h3>${Object.entries(SHOP).map(([k,it])=>{const l=shopLevel(k);const mx=l>=it.max;const c=it.cost[l+1];return `<div class="shop"><div class="si">${it.icon}</div><div style="flex:1"><b>${it.name}</b> <span class="stars">${'★'.repeat(l)}${'☆'.repeat(it.max-l)}</span><div class="tiny mut">${it.desc(Math.max(l,k==='coach'?1:0))}</div>${!mx?`<div class="tiny cy">Další úroveň: ${it.desc(l+1)}</div>`:''}</div>${mx?'<span class="tiny gold b">MAX</span>':`<button class="btn sm ${me.money>=c?'gold':''}" ${me.money<c?'disabled':''} onclick="uiBuy('${k}')">${fmtMoney(c)}</button>`}</div>`;}).join('')}</div>`;
+ h+=typeof v6TeamCard==='function'?v6TeamCard(me):`<div class="card"><h3>🧑‍🤝‍🧑 Tým a vybavení</h3></div>`;
  h+=`<div class="card"><h3>🃏 Karty dovedností</h3><div class="small mut" style="margin-bottom:8px">Karty používáš během zápasu. Stojí energii a mají cooldown (v bodech). Další odemkneš lepším trenérem.</div><div class="grid2">${Object.entries(CARDS).map(([k,c])=>{const ok=me.coach>=c.lvl;return `<div class="shop" style="margin:0;${ok?'':'opacity:.45'}"><div class="si" style="font-size:24px;width:30px">${c.icon}</div><div style="flex:1"><b class="small">${c.name}</b><div class="tiny mut">${c.desc}</div><div class="tiny cy">⚡${c.cost} · ⏳${c.cd}${ok?'':' · 🔒 trenér '+c.lvl}</div></div></div>`;}).join('')}</div></div>`;
  return h;}
 function uiMedia(k){const r=media(k);toast(r.msg);render();}
@@ -1191,14 +1617,16 @@ function renderCareer(){const me=ME();const c=me.car;const pct=c.matches?Math.ro
  <div class="tile"><b>${c.w}-${c.l}</b><span>Zápasy V-P</span></div><div class="tile"><b>${pct}%</b><span>Úspěšnost</span></div><div class="tile"><b class="gold">${c.titleList.length}</b><span>Tituly</span></div>
  <div class="tile"><b>${c.finals+c.titleList.length}</b><span>Finále</span></div><div class="tile"><b>${me.best||'—'}</b><span>Nejlepší žebř.</span></div><div class="tile"><b class="good" style="font-size:15px">${fmtMoney(c.prize)}</b><span>Prize money</span></div>
  <div class="tile"><b>${c.aces}</b><span>Esa</span></div><div class="tile"><b>${c.longest}</b><span>Nejdelší výměna</span></div><div class="tile"><b>${c.bestStreak}</b><span>Série výher</span></div>
- <div class="tile"><b>${c.tb[0]}-${c.tb[1]}</b><span>Tiebreaky</span></div><div class="tile"><b>${c.top10}</b><span>Výhry nad top 10</span></div><div class="tile"><b>${c.df}</b><span>Dvojchyby</span></div></div>
+ <div class="tile"><b>${c.tb[0]}-${c.tb[1]}</b><span>Tiebreaky</span></div><div class="tile"><b>${c.top10}</b><span>Výhry nad top 10</span></div><div class="tile"><b>${c.df}</b><span>Dvojchyby</span></div>
+ <div class="tile"><b>${me.dRank||'—'}</b><span>Žebř. čtyřhra</span></div><div class="tile"><b>${(c.davis&&c.davis.w)||0}-${(c.davis&&c.davis.l)||0}</b><span>Davis Cup</span></div><div class="tile"><b>${c.dtitles||0}</b><span>Tituly čtyřhra</span></div></div>
  <div style="margin-top:12px">${['H','C','G','I'].map(s=>{const [w,l]=c.surf[s];const p=w+l?w/(w+l)*100:0;return `<div class="row small" style="margin:5px 0"><span style="width:58px">${SURF[s].name}</span><div class="bar" style="flex:1"><i style="width:${p}%;background:${SURF[s].color}"></i></div><b style="width:52px;text-align:right">${w}-${l}</b></div>`;}).join('')}</div></div>`;
  h+=popCard(me)+`<div class="card"><h3>💼 Sponzoři<span class="sp"></span><span style="text-transform:none;letter-spacing:0">${fmtMoney(sponsorPay(me))}/týden</span></h3>${sponsorList(me)}</div>`;
+ if(typeof v6CareerExtra==='function')h+=v6CareerExtra(me);
  h+=`<div class="card"><h3>🏆 Vitrína trofejí</h3>${c.titleList.length?`<div class="grid3">${c.titleList.slice().reverse().map(t=>`<div class="trophy"><div class="tw">${trophySVG(TIERS[t.tier].color,44)}</div><b>${esc(t.name)}</b><span class="mut">${t.s} · ${TIERS[t.tier].short}</span></div>`).join('')}</div>`:'<div class="small mut">Zatím žádný titul. První trofej čeká!</div>'}</div>`;
  h+=`<div class="card"><h3>🏅 Úspěchy<span class="sp"></span><span>${Object.keys(me.ach).length}/${Object.keys(ACH).length}</span></h3>${Object.entries(ACH).map(([k,a])=>`<div class="ach ${me.ach[k]?'':'lock'}"><div class="ai">${a[2]}</div><div style="flex:1"><b class="small">${a[0]}</b><div class="tiny mut">${a[1]}</div></div>${me.ach[k]?`<span class="tiny gold">${me.ach[k].s}</span>`:''}</div>`).join('')}</div>`;
  if(me.seasons.length)h+=`<div class="card"><h3>📅 Sezóny</h3><table class="stt"><tr class="tiny mut"><td style="text-align:left">Rok</td><td>Žebř.</td><td>V-P</td><td>Tituly</td><td style="text-align:right">Výdělek</td></tr>${me.seasons.map(s=>`<tr><td style="text-align:left">${s.s}</td><td>${s.rank||'—'}</td><td>${s.w}-${s.l}</td><td>${s.titles}</td><td style="text-align:right">${fmtMoney(s.prize)}</td></tr>`).join('')}</table></div>`;
  h+=`<div class="card"><h3>🗂️ Historie turnajů</h3>${me.hist.slice(0,40).map(x=>`<div class="row small" style="padding:6px 0;border-bottom:1px solid rgba(255,255,255,.05)">${tierBadge(x.tier)}<div style="flex:1;min-width:0"><b style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block">${esc(x.name)}</b><span class="tiny mut">${x.s} · T${x.w} · ${SURF[x.surf].name}</span></div><div class="r"><b class="${x.res==='Vítěz'?'gold':''}">${x.res}</b><div class="tiny mut">+${x.pts} b. · ${fmtMoney(x.prize)}</div></div></div>`).join('')||'<div class="small mut">Ještě jsi nehrál turnaj.</div>'}</div>`;
- h+=`<div class="card"><h3>⚙️ Hra</h3><div class="grid2"><button class="btn ghost" onclick="saveGame();toast('Uloženo ✓')">💾 Uložit</button><button class="btn ghost" onclick="exportSave()">📤 Export</button><label class="btn ghost" style="cursor:pointer">📥 Import<input type="file" accept=".json" style="display:none" onchange="importSave(this)"></label><button class="btn red" onclick="confirmBox('Nová hra?','Současná kariéra bude smazána.','Smazat',()=>{resetGame();UI.tab='home';render();})">🗑️ Nová hra</button></div><div class="tiny mut" style="margin-top:8px">Hra se ukládá automaticky do prohlížeče (localStorage) po každém týdnu i akci.</div></div>`;
+ h+=`<div class="card"><h3>⚙️ Hra · v${GAME_VER}</h3><div class="grid2"><button class="btn ghost" onclick="saveGame();toast('Uloženo ✓')">💾 Uložit</button><button class="btn ghost" onclick="exportSave()">📤 Export</button><label class="btn ghost" style="cursor:pointer">📥 Import<input type="file" accept=".json" style="display:none" onchange="importSave(this)"></label><button class="btn red" onclick="confirmBox('Nová hra?','Současná kariéra bude smazána.','Smazat',()=>{resetGame();UI.tab='home';render();})">🗑️ Nová hra</button></div><div class="tiny mut" style="margin-top:8px">Hra se ukládá automaticky do prohlížeče (localStorage) po každém týdnu i akci.</div></div>`;
  return h;}
 function exportSave(){saveGame();const blob=new Blob([STORE.get(SAVE_KEY)||''],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=`tenis-manazer-${S.season}-t${S.week}.json`;a.click();}
 function importSave(inp){const f=inp.files[0];if(!f)return;const r=new FileReader();r.onload=()=>{try{const d=JSON.parse(r.result);if(!d.players||!d.season)throw 0;STORE.set(SAVE_KEY,r.result);loadGame();UI.tab='home';render();toast('Hra načtena ✓');}catch(e){toast('Neplatný soubor');}};r.readAsText(f);}
@@ -1222,8 +1650,9 @@ function renderEvent(){const ev=humanEvent();if(!ev){UI.tab='home';return render
    <div class="row" style="justify-content:space-between;margin-bottom:10px"><div class="c" style="width:42%">${avatarSVG(me,56)}<div class="b small">${esc(shortName(me))}</div><div class="tiny mut">${rankTxt(me)} · úr. ${Math.round(ovr(me))}</div></div><div class="b gold" style="font-size:22px">VS</div><div class="c" style="width:42%">${avatarSVG(o,56)}<div class="b small">${flag(o.cc)} ${esc(shortName(o))} ${seedTag(ev,o.id)}</div><div class="tiny mut">${rankTxt(o)} · úr. ${Math.round(ovr(o))} · ${S.season-o.by} let</div></div></div>
    ${row('Úroveň',ovr(me),ovr(o))}${STAT_KEYS.map(k=>row(STAT_NAMES[k],ms[k],o.st[k])).join('')}${row(SURF[ev.surf].name,50+(me.sf[ev.surf]||0)*8,50+(o.sf[ev.surf]||0)*8)}
    ${crowdBox(me,o,ev)}<div class="small mut" style="margin:8px 0">Styl soupeře: ${STYLE_NAMES[o.style]||'—'}${me.energy<45?` · <span class="warn">tvá energie je nízká (${Math.round(me.energy)})</span>`:''}</div>
+   ${typeof matchOddsLine==='function'?matchOddsLine(ev,me,o):''}
    <button class="btn big gold" onclick="preMatch(true)">▶ Hrát zápas</button>
-   <div class="grid2" style="margin-top:8px"><button class="btn ghost" onclick="preMatch(false)">⚡ Rychlá simulace</button><button class="btn ghost" onclick="simWholeEvent()">⏩ Simulovat turnaj</button></div></div>`;}
+   <div class="grid2" style="margin-top:8px"><button class="btn ghost" onclick="preMatch(false)">⚡ Rychlá simulace</button>${ev.dc||ev.dbl?'':`<button class="btn ghost" onclick="simWholeEvent()">⏩ Simulovat turnaj</button>`}</div></div>`;}
  } else if(st!=='alive'){
   const res=ev.done&&ev.champ==='me'?'🏆 ŠAMPION!':(S.cur.path&&S.cur.path.length?'Vypadl jsi: '+S.cur.path[S.cur.path.length-1].round:'Konec');
   h+=`<div class="card c" style="${st==='champ'?'border-color:#ffd34d;background:linear-gradient(160deg,rgba(255,211,77,.25),rgba(20,40,95,.6))':''}">${st==='champ'?`<div>${trophySVG(tier.color,90)}</div>`:''}<div class="b" style="font-size:22px">${res}</div><div class="small mut" style="margin:6px 0 12px">Body a prize money budou připsány na konci turnaje.</div><button class="btn big" onclick="uiAdvance()">Pokračovat ▶</button></div>`;
@@ -1257,11 +1686,14 @@ function tacEditor(t,cb){return Object.entries(TAC_OPTS).map(([k,o])=>`<div clas
 function tacSummary(t){const o=k=>{const x=TAC_OPTS[k].o.find(z=>String(z[0])===String(t[k]));return x?x[1]:'';};return [o('rally'),t.target!=='none'?'🎯 '+o('target'):'',t.net?'🏃 síť: '+o('net'):'',t.drop?'🪶 '+o('drop'):'',o('srvDir'),'return: '+o('retPos')].filter(Boolean).join(' · ');}
 function preMatch(live){const me=ME();const nm=humanNextMatch();const ev=humanEvent();if(!nm||!nm.opp)return;const o=P(nm.opp);
  me.tac=Object.assign({},TAC_DEF,me.tac||{});
+ if(typeof maybeCreateFixOffer==='function'&&maybeCreateFixOffer(ev,o)){showFixOfferModal(!!live);return;}
  if(!live){runEventMatch(false);return;}
  const pr=profileTxt(o);const rec=coachPlan(me,o,ev.surf);
+ const h2=me.h2h[o.id];const riv=typeof isRival==='function'&&isRival(o.id);
  modal(`<h2>📋 Příprava na zápas</h2>
- <div class="scout"><div class="row">${avatarSVG(o,48)}<div style="flex:1"><b>${flag(o.cc)} ${esc(o.n)}</b><div class="tiny mut">${rankTxt(o)} žebříčku · ${S.season-o.by} let · ${STYLE_NAMES[o.style]||''}</div></div></div>
- <div class="small" style="margin-top:8px">🔎 <b>Scouting:</b> ${pr.length?pr.join(', '):'vyrovnaný hráč bez výrazných slabin'}.${o.sf[ev.surf]?` Na povrchu ${SURF[ev.surf].name.toLowerCase()} ${o.sf[ev.surf]>0?'<span class="bad">se mu daří</span>':'<span class="good">se mu nedaří</span>'}.`:''}${o.sv?` <span class="mut">ATP: ${o.sv[2]} es/hru, ${o.sv[1]} % bodů na returnu.</span>`:''}</div>
+ <div class="scout"><div class="row">${avatarSVG(o,48)}<div style="flex:1"><b>${flag(o.cc)} ${esc(o.n)}</b><div class="tiny mut">${rankTxt(o)} žebříčku · ${S.season-o.by} let · ${STYLE_NAMES[o.style]||''}${riv?' · <span class="gold">rival</span>':''}</div></div></div>
+ <div class="small" style="margin-top:8px">🔎 <b>Scouting:</b> ${pr.length?pr.join(', '):'vyrovnaný hráč bez výrazných slabin'}.${o.sf[ev.surf]?` Na povrchu ${SURF[ev.surf].name.toLowerCase()} ${o.sf[ev.surf]>0?'<span class="bad">se mu daří</span>':'<span class="good">se mu nedaří</span>'}.`:''}${o.sv?` <span class="mut">ATP: ${o.sv[2]} es/hru, ${o.sv[1]} % bodů na returnu.</span>`:''}${h2?` Vzájemná bilance <b>${h2[0]}:${h2[1]}</b>.`: ' Ještě jste proti sobě nehráli.'}${riv?' Tohle už je rivalita – na kurtě to bude i o hlavě.':''}</div>
+ ${typeof preMatchOddsBlock==='function'?preMatchOddsBlock(ev,me,o):''}
  <div class="small" style="margin-top:6px">🧑‍🏫 <b>Trenér doporučuje:</b> ${tacSummary(rec)}</div><button class="btn sm gold" style="margin-top:8px" onclick="ME().tac=coachPlan(ME(),P('${o.id}'),'${ev.surf}');preMatch(true)">Použít plán trenéra</button></div>
  <div id="tacEd">${tacEditor(me.tac,'preTac')}</div>
  <div class="tiny mut" style="margin:8px 0">Taktiku i karty můžeš měnit kdykoli během zápasu (📋). Taktika působí podle profilu soupeře a povrchu.</div>
@@ -1269,6 +1701,7 @@ function preMatch(live){const me=ME();const nm=humanNextMatch();const ev=humanEv
 function preTac(k,v){const me=ME();me.tac[k]=isNaN(+v)?v:+v;$('#tacEd').innerHTML=tacEditor(me.tac,'preTac');}
 // ---------- human match results & injuries ----------
 function finishEventMatch(m,nm){const me=ME();const won=m.winner===0;me.energy=m.en[0];const o=P(nm.opp);
+ if(typeof resolveFixJob==='function')resolveFixJob(m);
  S.live=null;
  S.cur.path=S.cur.path||[];S.cur.path.push({round:nm.round,opp:o.n,cc:o.cc,won,score:m.scoreText(0)+(m.ret!=null?' skr.':'')});
  const ev=humanEvent();
@@ -1287,10 +1720,10 @@ function humanWithdraw(){const ev=humanEvent();const nm=humanNextMatch();if(!nm)
  S.cur.status='out';S.cur.path.push({round:nm.round,opp:nm.opp?P(nm.opp).n:'—',cc:nm.opp?P(nm.opp).cc:'',won:false,score:'odstoupil (zranění)'});
  S.news.unshift({w:S.week,s:S.season,inj:1,t:`🚑 ${ME().n} odstoupil z turnaje ${ev.name} kvůli zranění (${injWeeksTxt(ME())} pauza).`});}
 function runEventMatch(live,restore){const nm=humanNextMatch();const ev=humanEvent();const o=P(nm.opp);const me=ME();
- const opts={surf:ev.surf,bo:nm.qual?3:ev.bo,tb10:ev.tier==='GS'&&!nm.qual,cc:ev.cc,title:ev.name};
+ const opts={surf:ev.surf,bo:nm.qual?3:ev.bo,tb10:ev.tier==='GS'&&!nm.qual,cc:ev.cc,title:ev.name};if(S.fixJob)opts.fixJob=S.fixJob;
  if(!live){const m=new Match(me,o,Object.assign({autoInj:true},opts));m.simToEnd();const won=m.winner===0;const inj=finishEventMatch(m,nm);
   toast(`${won?'✅ Výhra':'❌ Prohra'} ${m.scoreText(0)}${m.ret!=null?' skr.':''} vs ${shortName(o)}${inj?' · 🤕 zranění!':''}`);if(S.cur.status==='champ')celebrate(ev);render();return;}
- openMatch({opp:o,surf:ev.surf,bo:opts.bo,tb10:opts.tb10,cc:ev.cc,title:`${ev.name} · ${nm.round}`,tour:ev.name,round:nm.round,tier:ev.tier,ev,restore,kind:'event',onEnd:(m)=>{const inj=finishEventMatch(m,nm);let x='';
+ openMatch({opp:o,surf:ev.surf,bo:opts.bo,tb10:opts.tb10,cc:ev.cc,title:`${ev.name} · ${nm.round}`,tour:ev.name,round:nm.round,tier:ev.tier,ev,restore,kind:'event',fixJob:opts.fixJob,onEnd:(m)=>{const inj=finishEventMatch(m,nm);let x='';
   if(S.cur.status==='champ'){x=`<div class="gold b" style="font-size:18px">🏆 Vyhrál jsi turnaj ${esc(ev.name)}!</div>`;setTimeout(()=>celebrate(ev),350);}
   else if(inj)x=`<div class="bad b">🤕 Zranění – musíš z turnaje odstoupit (${injWeeksTxt(ME())}).</div>`;
   else if(m.ret===1)x=`<div class="warn b">🚑 Soupeř skrečoval – postupuješ.</div>`;
@@ -1375,8 +1808,8 @@ function figureSVG(p,back){const l=lookFor(p);const lefty=p.hand==='L';const ski
  ${back?`<path d="M-9.6 -93 A9.6 9.6 0 1 1 9.6 -93 L9 -88 Q0 -84 -9 -88Z" fill="${hair}"/>`:`<path d="M-9.5 -95 C-9 -106 9 -106 9.5 -95 C6 -100 -6 -100 -9.5 -95Z" fill="${hair}"/><circle cx="-3.2" cy="-94" r="1.3" fill="#141414"/><circle cx="3.2" cy="-94" r="1.3" fill="#141414"/>`}
  ${l.band||p.isMe?`<rect x="-9.8" y="-101" width="19.6" height="3.4" rx="1.6" fill="${shirt}" stroke="rgba(255,255,255,.5)" stroke-width=".6"/>`:''}
  </g></g>`;}
-function openMatch(o){const me=ME();let m;
- if(o.restore){m=Match.restore(o.restore);}else m=new Match(me,o.opp,{surf:o.surf,bo:o.bo,tb10:o.tb10,cc:o.cc,title:o.tour||o.title,noInj:!!o.daily});
+function openMatch(o){const me=o.me||ME();let m;
+ if(o.restore){m=Match.restore(o.restore);}else m=new Match(me,o.opp,{surf:o.surf,bo:o.bo,tb10:o.tb10,cc:o.cc,title:o.tour||o.title,noInj:!!o.daily,fixJob:o.fixJob});
  Object.assign(MS,{m,o,paused:false,abort:false,skip:false,speed:UI.speed,pos:[[30,380],[-30,-18]],ended:false,trail:[],coachShown:0});
  const wrap=document.createElement('div');wrap.className='mv-wrap';wrap.id='mv';
  wrap.innerHTML=`<div class="mview s-${o.surf}">
@@ -1385,6 +1818,8 @@ function openMatch(o){const me=ME();let m;
  <div class="court-wrap">${courtSVG(o.surf)}<div class="callout" id="callout"></div><div class="spdbox" id="spdbox"></div><div class="hawk" id="hawk"></div><div class="rally">VÝMĚNA<b id="rallyN">0</b></div><div class="lower3" id="l3"></div></div>
  <div class="comm" id="comm">🎾 Zápas začíná. Podává ${esc(m.p[m.server].n)}.</div>
  <div class="mom" title="Momentum"><i id="momI" style="left:50%"></i></div>
+ <div class="liveodds" id="liveodds"></div>
+ <div class="matchopts"><button class="btn ghost sm plvis" id="plVis" onclick="toggleShowPlayers()" title="Zobrazit hráče">Zobrazit hráče <b id="plVisT">vypnuto</b></button>${typeof showLiveMarkets==='function'?`<button class="btn ghost sm" onclick="showLiveMarkets()">📡 Živé sázky</button>`:''}</div>
  <div class="mbars"><div>⚡ ${esc(shortName(me))} <b id="enMeT"></b><div class="bar en"><i id="enMe"></i></div></div><div>⚡ ${esc(shortName(m.p[1]))} <b id="enOpT"></b><div class="bar en"><i id="enOp"></i></div></div></div>
  <div class="cards" id="cards"></div>
  <div class="mctrl"><div class="seg-t" id="tac">${Object.entries(TACTICS).map(([k,t])=>`<button data-k="${k}" onclick="setTactic('${k}')" title="${t.name}">${t.icon}</button>`).join('')}</div>
@@ -1394,7 +1829,7 @@ function openMatch(o){const me=ME();let m;
  <div class="sheet" id="sheet"></div></div>`;
  document.body.appendChild(wrap);
  fitCourt();$('#pl0').innerHTML=figureSVG(me,true);$('#pl1').innerHTML=figureSVG(m.p[1],false);
- placePlayers(0);updateScore();updateBars();renderCards();setTactic(m.tac[0].rally,true);setSpeed(MS.speed,true);placeBallAtServer();
+ placePlayers(0);if(typeof applyShowPlayers==='function')applyShowPlayers();updateScore();updateBars();renderCards();setTactic(m.tac[0].rally,true);setSpeed(MS.speed,true);placeBallAtServer();
  if(o.restore)setComm('▶ Pokračuješ v rozehraném zápase.');
  setTimeout(matchLoop,700);}
 function setTactic(k,silent){MS.m.tac[0].rally=k;const me=ME();me.tac=me.tac||{};me.tac.rally=k;document.querySelectorAll('#tac button').forEach(b=>b.classList.toggle('on',b.dataset.k===k));if(!silent)setComm(`📋 Styl výměn: <b>${TACTICS[k].name}</b>`);}
@@ -1499,7 +1934,7 @@ function isSetPoint(m){// returns label if someone has set/match point
  for(let i=0;i<2;i++){const j=1-i;let gp=false;if(m.tb)gp=m.pt[i]>=m.tbT-1&&m.pt[i]>m.pt[j];else gp=m.pt[i]>=3&&m.pt[i]>m.pt[j];if(!gp)continue;const g=m.g[i]+1,gj=m.g[j];const setWin=m.tb||(g>=6&&g-gj>=2)||g===7;if(!setWin)continue;return m.setsW[i]+1>=m.need?'MEČBOL':'SETBOL';}
  return '';}
 function updateBars(){const m=MS.m;const a=$('#enMe'),b=$('#enOp');if(!a)return;a.style.width=m.en[0]+'%';b.style.width=m.en[1]+'%';$('#enMeT').textContent=Math.round(m.en[0]);$('#enOpT').textContent=Math.round(m.en[1]);
- const h=m.history;const v=h.length?h.reduce((x,y)=>x+(y===0?1:-1),0)/16:0;$('#momI').style.left=clamp(50+v*45,3,97)+'%';}
+ const h=m.history;const v=h.length?h.reduce((x,y)=>x+(y===0?1:-1),0)/16:0;const mi=$('#momI');if(mi)mi.style.left=clamp(50+v*45,3,97)+'%';if(typeof updateLiveOddsUI==='function')updateLiveOddsUI();}
 function renderCards(){const m=MS.m;const me=ME();const el=$('#cards');if(!el)return;
  el.innerHTML=Object.entries(CARDS).filter(([k,c])=>me.coach>=c.lvl).map(([k,c])=>{const act=m.active[0][k];const cd=m.cd[0][k]||0;const no=m.en[0]<c.cost;const cdp=cd?Math.round(cd/c.cd*100):0;
   return `<button class="kc lv${c.lvl} ${act?'act':''} ${no&&!act&&!cd?'no':''}" onclick="playCard('${k}')"><span class="kco">⚡${c.cost}</span><span class="kring"><span class="ki">${c.icon}</span></span><span class="kn">${c.name}</span>${act?`<span class="kact">aktivní ${act}</span>`:''}${cd&&!act?`<div class="cdv" style="--p:${cdp}%"><b>${cd}</b></div>`:''}</button>`;}).join('');}
@@ -1523,8 +1958,9 @@ async function matchLoop(){const m=MS.m;let sinceSave=0;
   if(r.injury){await injuryUI(r);if(MS.abort)return;}
   if(m.done)break;
   sinceSave++;if((r.event&&r.event.game!=null)||sinceSave>=8){sinceSave=0;saveLive();}
+  if(typeof onHumanLiveKey==='function'&&r.event)onHumanLiveKey(m,r);
   if(r.event&&r.event.game!=null&&(m.g[0]+m.g[1])%2===1&&MS.speed<99)showLower3();
-  if(r.event&&r.event.set!=null&&!m.done&&MS.speed<99&&!MS.coachShown){MS.coachShown=1;setTimeout(()=>{if(!MS.ended&&!m.done)setComm('🧑‍🏫 Konec setu – trenér má pro tebe rady (tlačítko 🧑‍🏫).');},300);}
+  if(r.event&&r.event.set!=null&&!m.done&&MS.speed<99){MS.coachShown=(MS.coachShown||0)+1;setTimeout(()=>{if(MS.ended||m.done)return;if(MS.speed<=2){setComm('🧑‍🏫 Konec setu – trenér si bere slovo.');openTacSheet(true);}else setComm('🧑‍🏫 Konec setu – trenér má pro tebe rady (tlačítko 🧑‍🏫).');},300);}
   if(MS.speed<99&&!MS.skip)placeBallAtServer();
   await sleep(MS.speed>=99?45:Math.max(170,760/MS.speed));
  }
@@ -1847,6 +2283,202 @@ function fitCourt(){const sv=$('#court');if(!sv)return;const w=sv.clientWidth||s
  const needW=330,needH=405;const s=Math.min(w/needW,h/needH);let vw=w/s,vh=h/s;vw=Math.min(vw,600);vh=Math.min(vh,570);
  const x0=180-vw/2,y0=Math.max(-130,438-vh);sv.setAttribute('viewBox',`${x0.toFixed(1)} ${y0.toFixed(1)} ${vw.toFixed(1)} ${vh.toFixed(1)}`);}
 window.addEventListener('resize',()=>{if($('#court'))fitCourt();});
+
+// ===================== V6 UI: sázky, integrita, tým, čtyřhra, Davis Cup =====================
+function v6RenderModals(){if(document.getElementById('mbg')||document.getElementById('mv'))return;
+ if(S.invAlert){showInvModal();return;}
+ if(S.fixAlert){const ev=humanEvent();const nm=ev&&humanNextMatch();showFixOfferModal(true);return;}
+ if(S.davisAlert){showDavisModal();return;}
+ const me=ME();if(me&&(me.sponsOff||[]).length&&!S._sponsShown){S._sponsShown=1;/* keep quiet, card is on home */}}
+function v6HomeCards(){const me=ME();let h='';
+ if(typeof maybeNominateDavis==='function')maybeNominateDavis();
+ const d=S.davis&&S.davis.nom;if(d&&d.ok&&d.week===S.week&&!S.weekStarted)h+=davisHomeCard(d);
+ if((me.sponsOff||[]).length)h+=sponsorOfferCard(me);
+ h+=bettingBoardCard();
+ const evd=S.events&&S.events.find(e=>e.dbl&&e.human&&!e.done);if(evd)h+=doublesHomeCard(evd);
+ return h;}
+
+function davisHomeCard(d){const opp=COUNTRIES[d.opp]?COUNTRIES[d.opp][1]:d.opp;const phase=d.phase==='fin'?'finále':'baráž';
+ const st=d.accepted===true?'<span class="good">Nominaci máš přijatou</span>':d.accepted===false?'<span class="mut">Nominaci jsi odmítl</span>':'<span class="gold">Čeká na tvé rozhodnutí</span>';
+ return `<div class="card" style="border-color:rgba(91,140,255,.5)"><h3>🏳️ Davis Cup · ${phase}</h3>
+ <div class="small">Svaz tě nominoval proti <b>${flag(d.opp)} ${esc(opp)}</b> na povrchu ${SURF[d.surf]?SURF[d.surf].name:'hala'}.</div>
+ <div class="small" style="margin:6px 0">${st}</div>
+ ${d.accepted==null?`<div class="grid2"><button class="btn gold" onclick="uiDavis(true)">Přijmout</button><button class="btn ghost" onclick="uiDavis(false)">Odmítnout</button></div>`:''}</div>`;}
+function showDavisModal(){S.davisAlert=null;const d=S.davis&&S.davis.nom;if(!d||!d.ok){saveGame();return;}
+ const opp=COUNTRIES[d.opp]?COUNTRIES[d.opp][1]:d.opp;const phase=d.phase==='fin'?'finále':'baráž (kvalifikace)';
+ modal(`<h2>🏳️ Nominace do Davis Cupu</h2>
+ <p class="small">Národní svaz tě povolal do týmu na <b>${phase}</b> proti <b>${flag(d.opp)} ${esc(opp)}</b>. Hraje se na 2 vítězné sety, venku na tebe čeká i čtyřhra spoluhráčů. Za start je odměna od svazu a popularita, žádné body ATP.</p>
+ <div class="small mut">Pokud odmítneš, tým nastoupí bez tebe.</div>
+ <div class="row" style="margin-top:14px"><button class="btn ghost" style="flex:1" onclick="uiDavis(false)">Odmítnout</button><button class="btn gold" style="flex:1" onclick="uiDavis(true)">Přijmout nominaci</button></div>`);}
+function uiDavis(yes){const r=acceptDavis(yes);closeModal();toast(r.msg);render();}
+
+function sponsorOfferCard(me){const off=me.sponsOff||[];if(!off.length)return '';
+ return `<div class="card"><h3>✍️ Sponzorské nabídky</h3>${off.map(o=>{const sp=SPONSORS_V6.find(s=>s.id===o.id);if(!sp)return '';const mul=sponsorPayMul(me);return `<div class="shop"><div class="si">${sp.icon}</div><div style="flex:1"><b>${esc(sp.name)}</b><div class="tiny mut">${esc(sp.desc)} · ${fmtMoney(Math.round(sp.pay*mul))}/týd. · podpisové ${fmtMoney(Math.round(sp.sign*mul))}</div></div><button class="btn sm gold" onclick="uiAcceptSponsor('${sp.id}')">Přijmout</button><button class="btn sm ghost" onclick="uiDeclineSponsor('${sp.id}')">Ne</button></div>`;}).join('')}</div>`;}
+function uiAcceptSponsor(id){const r=acceptSponsor(id);toast(r.msg);render();}
+function uiDeclineSponsor(id){const r=declineSponsor(id);toast(r.msg);render();}
+
+function bettingBoardCard(){const mk=S.market;if(!mk||!mk.items||!mk.items.length)return '';
+ const me=ME();const open=mk.items.filter(x=>!x.done);
+ if(!open.length&&!(S.bets||[]).some(b=>!b.settled&&b.week===S.week))return '';
+ if(S.weekStarted&&S.market)topUpBettingBoard();
+ let h=`<div class="card betcard"><h3>🎲 Sázková nabídka<span class="sp"></span><span class="tiny" style="text-transform:none;letter-spacing:0">jen herní $</span></h3>
+ <div class="tiny mut" style="margin-bottom:8px">Kurzy z žebříčku, formy, povrchu a vzájemných zápasů. Veřejnost sází i během zápasu — po gamu, brejku a setu se hýbou procenta, objem i kurz. Na vlastní zápas sázet nesmíš (${esc(IJT)}).</div>
+ ${S.weekStarted?`<button class="btn gold" style="width:100%;margin-bottom:8px" onclick="showLiveMarkets()">📡 Živé kurzy</button>`:''}`;
+ for(const it of open.slice(0,8)){
+  const pa=P(it.a),pb=P(it.b);
+  const own=it.own?' <span class="tiny gold">tvůj zápas · nelze vsadit</span>':'';
+  const shady=it.shady?' <span class="tiny warn">neobvyklý pohyb na trhu</span>':'';
+  const live=it.liveSt&&!it.done?`<span class="tiny cy"> · live ${esc(liveScoreTxt(it.liveSt))}</span>`:(it.done?`<span class="tiny mut"> · konec</span>`:'');
+  h+=`<div class="betrow ${it.own?'own':''}"><div class="tiny mut">${esc(it.name)} · ${SURF[it.surf]?SURF[it.surf].name:''}${own}${shady}${live}</div>
+   <div class="row" style="align-items:center;gap:8px;margin-top:4px">
+    <div style="flex:1;min-width:0"><b class="small">${flag(it.aCC)} ${esc(shortName(pa)||it.aN)}</b><div class="tiny mut">${it.pctA} % sázek · ${fmtMoney(it.pubA)}</div></div>
+    <div class="c"><b class="gold">${fmtOdds(it.oddsA)}</b>${it.own?'':`<button class="btn sm" onclick="uiBet('${it.id}','a')">Vsadit</button>`}</div>
+   </div>
+   <div class="row" style="align-items:center;gap:8px;margin-top:4px">
+    <div style="flex:1;min-width:0"><b class="small">${flag(it.bCC)} ${esc(shortName(pb)||it.bN)}</b><div class="tiny mut">${100-it.pctA} % sázek · ${fmtMoney(it.pubB)}</div></div>
+    <div class="c"><b class="gold">${fmtOdds(it.oddsB)}</b>${it.own?'':`<button class="btn sm" onclick="uiBet('${it.id}','b')">Vsadit</button>`}</div>
+   </div>
+   <div class="pubbar" title="Rozdělení sázek"><i style="width:${it.pctA}%"></i></div>
+   <div class="tiny mut">${fmtNum(it.bettors)} sázkařů · objem ${fmtMoney(it.vol)}</div></div>`;}
+ const mine=(S.bets||[]).filter(b=>b.week===S.week&&b.season===S.season);
+ if(mine.length)h+=`<div class="tiny b" style="margin-top:8px">Tvoje sázky</div>`+mine.map(b=>`<div class="tiny">${esc(b.name)} · ${fmtMoney(b.stake)} @ ${fmtOdds(b.odds)} ${b.settled?(b.result==='win'?'<span class="good">výhra '+fmtMoney(b.payout)+'</span>':'<span class="bad">prohra</span>'):'<span class="mut">živě</span>'}</div>`).join('');
+ return h+'</div>';}
+function uiBet(mid,side,market){const it=findMarket(mid);if(!it){toast('Trh už není.');return;}if(it.own){toast('Na vlastní zápas sázet nesmíš – '+IJT+' to hlídá.');return;}const me=ME();const max=maxBetStake(me);if(max<50){toast('Nemáš dost herních peněz na sázku.');return;}
+ market=market||'match';if(market!=='match')ensureLiveState(it);
+ const nm=side==='a'?it.aN:it.bN;const od=oddsForBet(it,market,side);
+ const lab=market==='set'?'další set':market==='game'?'další game':'vítěze zápasu';
+ const keepLive=!!document.getElementById('livemkt');
+ modal(`<h2>🎲 ${market!=='match'?'Live sázka':'Sázka'} (herní peníze)</h2>
+ <p class="small">Sázíš na <b>${esc(nm)}</b> – trh na <b>${lab}</b> v zápase <b>${esc(it.name)}</b>${it.liveSt?` (stav ${esc(liveScoreTxt(it.liveSt))})`:''} v kurzu <b>${fmtOdds(od)}</b>. Jsou to jen herní dolary.</p>
+ <label class="tiny mut">Částka (min. $50, max. ${fmtMoney(max)})</label>
+ <input id="betAmt" type="number" inputmode="numeric" min="50" max="${max}" value="${Math.min(200,max)}">
+ <div class="row" style="margin-top:14px"><button class="btn ghost" style="flex:1" onclick="${keepLive?'showLiveMarkets()':'closeModal()'}">Zpět</button><button class="btn gold" style="flex:1" onclick="uiPlaceBet('${mid}','${side}','${market}',${keepLive?1:0})">Podat sázku</button></div>`);}
+function uiPlaceBet(mid,side,market,backLive){const inp=$('#betAmt');const r=placeBet(mid,side,inp?inp.value:0,market||'match');toast(r.msg);if(r.ok){if(backLive)showLiveMarkets();else{closeModal();render();}}else if(backLive)showLiveMarkets();}
+function weekBetSummary(before){const list=(S.bets||[]).filter(b=>b.settled&&b.week===before.week&&b.season===before.season);if(!list.length)return '';
+ const w=list.filter(b=>b.result==='win'),l=list.filter(b=>b.result==='lose');const net=list.reduce((a,b)=>a+(b.payout||0)-b.stake,0);
+ return `<div class="small" style="margin-top:8px">🎲 Sázky: ${w.length} výher / ${l.length} proher · <b class="${net>=0?'good':'bad'}">${net>=0?'+':''}${fmtMoney(net)}</b> (jen herní $)</div>`;}
+
+function matchOddsLine(ev,me,o){const p=fairMatchP(me,o,ev.surf,ev.bo);const od=oddsFromP(p,1.05);
+ const it=S.market&&S.market.items&&S.market.items.find(x=>x.own&&x.eid===ev.id);
+ const pct=it?it.pctA:Math.round((me.id==='me'?(p):1-p)*100);
+ const vol=it?it.vol:null;const my=it&&it.a==='me'?it.oddsA:od.a;const yo=it&&it.a==='me'?it.oddsB:od.b;
+ return `<div class="oddsline"><span>Kurzy: ty <b>${fmtOdds(my)}</b> · soupeř <b>${fmtOdds(yo)}</b></span><span class="tiny mut">${it?it.pctA+' % sázek na tebe · objem '+fmtMoney(it.vol):'otevírací kurz podle formy a žebříčku'}</span></div>`;}
+function preMatchOddsBlock(ev,me,o){return `<div style="margin-top:8px">${matchOddsLine(ev,me,o)}</div>`;}
+function updateLiveOddsUI(){const el=$('#liveodds');if(!el||!MS.m)return;const ev=MS.o&&MS.o.ev;const lo=liveOddsForMatch(MS.m,ev);if(!lo){el.innerHTML='';return;}
+ const it=lo.it;const shady=it&&it.shady?' · <span class="warn">neobvyklý pohyb</span>':'';
+ const split=it?` · ${it.pctA} % sázek na ${it.a==='me'?'tebe':esc(shortName(P(it.a)))} · objem ${fmtMoney(it.vol)} · ${fmtNum(it.bettors||0)} sázkařů`:'';
+ el.innerHTML=`Kurzy živě: ty <b>${fmtOdds(lo.me)}</b> · soupeř <b>${fmtOdds(lo.opp)}</b>${split}${shady}`;
+}
+
+function liveMarketsHTML(){topUpBettingBoard();const items=(S.market&&S.market.items||[]).filter(x=>!x.done||(x.liveSt&&!x.liveSt.done));
+ if(!items.length)return '<div class="small mut">Teď neběží žádný živý trh.</div>';
+ let h='';for(const it of items){ensureLiveState(it);const pa=P(it.a),pb=P(it.b);const own=it.own;
+  h+=`<div class="betrow live ${own?'own':''}"><div class="tiny mut">${esc(it.name)} · ${SURF[it.surf]?SURF[it.surf].name:''}${own?' · <span class="gold">tvůj zápas</span>':''}</div>
+  <div class="b small" style="margin:3px 0">${flag(it.aCC)} ${esc(shortName(pa)||it.aN)} <span class="cy">${esc(liveScoreTxt(it.liveSt))}</span> ${flag(it.bCC)} ${esc(shortName(pb)||it.bN)}</div>
+  <div class="pubbar"><i style="width:${it.pctA}%"></i></div>
+  <div class="tiny mut">${it.pctA} % / ${100-it.pctA} % · objem ${fmtMoney(it.vol)} · ${fmtNum(it.bettors||0)} sázkařů${it.shady?' · <span class="warn">neobvyklý pohyb</span>':''}</div>
+  <div class="livemkts">
+   <div class="lm"><div class="tiny b">Zápas</div><div class="row"><span class="small">${esc(shortName(pa)||it.aN)} <b class="gold">${fmtOdds(it.oddsA)}</b></span>${own?'':`<button class="btn sm" onclick="uiBet('${it.id}','a','match')">Vsadit</button>`}</div>
+    <div class="row"><span class="small">${esc(shortName(pb)||it.bN)} <b class="gold">${fmtOdds(it.oddsB)}</b></span>${own?'':`<button class="btn sm" onclick="uiBet('${it.id}','b','match')">Vsadit</button>`}</div></div>
+   ${it.liveSt&&!it.liveSt.done&&it.setM?`<div class="lm"><div class="tiny b">${it.setM.n||''}. set</div><div class="row"><span class="small">${esc(shortName(pa)||it.aN)} <b class="gold">${fmtOdds(it.setM.oddsA)}</b></span>${own?'':`<button class="btn sm" onclick="uiBet('${it.id}','a','set')">Vsadit</button>`}</div>
+    <div class="row"><span class="small">${esc(shortName(pb)||it.bN)} <b class="gold">${fmtOdds(it.setM.oddsB)}</b></span>${own?'':`<button class="btn sm" onclick="uiBet('${it.id}','b','set')">Vsadit</button>`}</div></div>`:''}
+   ${it.liveSt&&!it.liveSt.done&&it.gameM?`<div class="lm"><div class="tiny b">Další game${it.liveSt?` · podává ${esc(shortName(it.liveSt.server===0?pa:pb))}`:''}</div><div class="row"><span class="small">${esc(shortName(pa)||it.aN)} <b class="gold">${fmtOdds(it.gameM.oddsA)}</b></span>${own?'':`<button class="btn sm" onclick="uiBet('${it.id}','a','game')">Vsadit</button>`}</div>
+    <div class="row"><span class="small">${esc(shortName(pb)||it.bN)} <b class="gold">${fmtOdds(it.gameM.oddsB)}</b></span>${own?'':`<button class="btn sm" onclick="uiBet('${it.id}','b','game')">Vsadit</button>`}</div></div>`:''}
+  </div>
+  ${own?'<div class="tiny mut">Na tento zápas sázet nesmíš.</div>':''}
+  </div>`;}
+ return h;}
+function showLiveMarkets(){if(typeof tickLiveMarkets==='function')tickLiveMarkets(1);topUpBettingBoard();
+ if(MS&&MS.m&&!MS.ended){MS.paused=true;const b=$('#pauseB');if(b)b.textContent='▶';}
+ modal(`<h2>📡 Živé sázky</h2>
+ <div class="tiny mut" style="margin-bottom:8px">Simulovaní sázkaři sázejí v průběhu zápasu. Trhy: vítěz, další set, další game. Pouze herní dolary. Na vlastní zápas sázet nesmíš.</div>
+ <div id="livemkt">${liveMarketsHTML()}</div>
+ <div class="row" style="margin-top:10px"><button class="btn ghost" style="flex:1" onclick="tickLiveMarkets(1);refreshLiveMkt()">Obnovit</button><button class="btn" style="flex:1" onclick="closeModal()">Zavřít</button></div>`);}
+function refreshLiveMkt(){const el=$('#livemkt');if(el)el.innerHTML=liveMarketsHTML();}
+
+function applyShowPlayers(){const on=showPlayersOn();const mv=document.querySelector('#mv .mview')||document.querySelector('.mview');if(mv)mv.classList.toggle('hidepl',!on);
+ const btn=$('#plVis');if(btn){btn.classList.toggle('on',on);btn.setAttribute('aria-pressed',on?'true':'false');}const lab=$('#plVisT');if(lab)lab.textContent=on?'zapnuto':'vypnuto';}
+function toggleShowPlayers(fromSet){const on=setShowPlayers(!showPlayersOn());toast(on?'Hráči na kurtu jsou vidět.':'Hráči jsou schovaní — zůstává míček, stopy a tabule.');applyShowPlayers();if(fromSet&&typeof render==='function'&&!document.getElementById('mv'))render();}
+
+
+// --- integrity ---
+function showFixOfferModal(liveAfter){S.fixAlert=null;const me=ME();const ig=ensureIntegrity(me);const o=ig.off;if(!o||!o.open)return;
+ UI._fixLive=!!liveAfter;
+ modal(`<h2>📩 Zpráva ze skrytého čísla</h2>
+ <p class="small">Někdo, kdo se nepředstavil, nabízí <b>${fmtMoney(o.amt)}</b> v hotovosti (herní peníze), když v zápase na turnaji <b>${esc(o.name)}</b> „neuděláš všechno, co bys mohl“. Chce, abys <b>${esc(o.txt)}</b>${o.oppN?' proti '+esc(o.oppN):''}.</p>
+ <p class="small mut">Takové věci se na nižších okruzích občas stávají. ${IJT} stíhá ovlivňování zápasů: od pokuty přes zákaz na měsíce a roky až po doživotní zákaz, ztrátu sponzorů a konec kariéry. Podezřelé sázky na trhu to mohou prozradit.</p>
+ <div class="col" style="gap:8px;margin-top:12px">
+  <button class="btn" onclick="uiFix('refuse')">Odmítnout</button>
+  <button class="btn gold" onclick="uiFix('report')">Nahlásit ${IJT}</button>
+  <button class="btn red" onclick="uiFix('accept')">Přijmout nabídku</button>
+ </div>
+ <button class="btn ghost" style="width:100%;margin-top:8px" onclick="closeModal();">Rozhodnu se později</button>`,true);}
+function uiFix(choice){if(choice==='accept'){confirmBox('Opravdu přijmout?','Porušíš pravidla hry. Peníze dostaneš, ale musíš v zápase záměrně zvolnit. Riskuješ pokutu, zákaz startu, ztrátu sponzorů i konec kariéry. Sázkový trh se může začít chovat podezřele.','Přijmout',()=>{doFix('accept');});return;}
+ doFix(choice);}
+function doFix(choice){const r=respondFix(choice);closeModal();toast(r.msg);if(choice!=='accept'&&choice!=='refuse'&&choice!=='report')return;
+ const live=UI._fixLive!==false;if(humanNextMatch()&&humanNextMatch().opp){if(live)preMatch(true);else runEventMatch(false);}else render();}
+function showInvModal(){const a=S.invAlert;S.invAlert=null;saveGame();if(!a)return;
+ modal(`<div class="c"><div style="font-size:44px">${a.life?'🚫':'⚠️'}</div><h2 style="margin:4px 0">${IJT}</h2></div>
+ <p class="small">${esc(a.msg)}</p>
+ ${a.life?`<div class="small mut">Můžeš si prohlédnout kariéru, exportovat uložení, nebo začít znovu.</div><button class="btn big" style="margin-top:12px" onclick="closeModal();go('career')">Kariéra</button>`:`<button class="btn big" style="margin-top:12px" onclick="closeModal()">Rozumím</button>`}`,true);}
+
+// --- staff & gear ---
+function v6TeamCard(me){let h=`<div class="card"><h3>🧑‍🤝‍🧑 Tým<span class="sp"></span><span class="small" style="text-transform:none;letter-spacing:0">týdně ${fmtMoney(weeklyCosts(me))}</span></h3>
+ <div class="tiny mut" style="margin-bottom:8px">Každého člena můžeš najmout na vyšší úroveň, nebo ho propustit a ušetřit na platu (platíš odstupné).</div>`;
+ for(const k of ['coach','fitness','physio','mental','manager']){const it=STAFF[k];const l=staffLvl(me,k);const mx=l>=it.max;const mn=l<=(it.min||0);const c=it.cost[l+1];
+  h+=`<div class="shop"><div class="si">${it.icon}</div><div style="flex:1"><b>${it.name}</b> <span class="stars">${'★'.repeat(l)}${'☆'.repeat(it.max-l)}</span><div class="tiny mut">${it.desc(l)}</div>${!mx?`<div class="tiny cy">Další: ${it.desc(l+1)}</div>`:''}</div><div class="col" style="gap:4px">${mx?'<span class="tiny gold b">MAX</span>':`<button class="btn sm ${me.money>=c?'gold':''}" ${me.money<c?'disabled':''} onclick="uiHire('${k}')">${fmtMoney(c)}</button>`}${mn?'':`<button class="btn sm ghost" onclick="uiFire('${k}')">Propustit</button>`}</div></div>`;}
+ h+=`</div><div class="card"><h3>🎒 Vybavení</h3><div class="tiny mut" style="margin-bottom:8px">Úroveň kvality zůstává. Navíc si vybereš model – drobné specializace (síla vs. kontrola, povrch bot, typ výpletu).</div>`;
+ for(const k of ['raketa','boty','vyplet']){const it=SHOP[k];const l=shopLevel(k);const mx=l>=it.max;const c=it.cost[l+1];const cur=gearModel(me,k);
+  h+=`<div class="shop"><div class="si">${it.icon}</div><div style="flex:1"><b>${it.name}</b> <span class="stars">${'★'.repeat(l)}${'☆'.repeat(it.max-l)}</span><div class="tiny mut">${it.desc(l)} · model: <b>${esc(cur.n)}</b> — ${esc(cur.d)}</div>
+  <div class="seg-t" style="margin-top:6px;flex-wrap:wrap">${GEAR_MODELS[k].map(m=>`<button class="${cur.id===m.id?'on':''}" onclick="uiGear('${k}','${m.id}')">${m.n}</button>`).join('')}</div></div>${mx?'<span class="tiny gold b">MAX</span>':`<button class="btn sm ${me.money>=c?'gold':''}" ${me.money<c?'disabled':''} onclick="uiBuy('${k}')">${fmtMoney(c)}</button>`}</div>`;}
+ return h+'</div>';}
+function uiHire(k){const r=hireStaff(k);toast(r.msg);render();}
+function uiFire(k){const it=STAFF[k];const l=staffLvl(ME(),k);const sev=Math.round((it.sal[l]||0)*2);
+ confirmBox('Propustit '+it.name+'?',`Klesneš o úroveň. Odstupné ${fmtMoney(sev)} se strhne teď, od příštího týdne platíš nižší plat.`,'Propustit',()=>{const r=fireStaff(k);toast(r.msg);render();});}
+function uiGear(k,id){const r=setGearModel(k,id);toast(r.msg);render();}
+
+// --- doubles ---
+function showDoublesOptIn(t){const me=ME();const cands=partnerCandidates(t);
+ modal(`<h2>🤝 Čtyřhra</h2>
+ <p class="small">Jsi přihlášen do dvouhry na turnaji <b>${esc(t.name)}</b>. Chceš přidat i čtyřhru? Stojí to energii navíc, body jdou na samostatný žebříček čtyřhry. Partnera ti nabídneme z hráčů, kteří jsou volní.</p>
+ ${cands.length?`<label class="tiny mut">Partner</label><select id="dblP">${cands.map(p=>`<option value="${p.id}">${flag(p.cc)} ${esc(p.n)} · čtyřhra ${p.dRank||'—'} · ${STYLE_NAMES[p.style]||''}</option>`).join('')}</select>
+ <div class="row" style="margin-top:14px"><button class="btn ghost" style="flex:1" onclick="closeModal();toast('Přihlášen jen do dvouhry: ${esc(t.name)}');render()">Jen dvouhra</button><button class="btn gold" style="flex:1" onclick="uiJoinDoubles()">I čtyřhru</button></div>`:`<div class="small mut">Teď se nenašel volný partner. Zůstáváš v dvouhře.</div><button class="btn big" style="margin-top:12px" onclick="closeModal();render()">OK</button>`}`);}
+function uiJoinDoubles(){const sel=$('#dblP');if(!sel){closeModal();render();return;}S.plan=S.plan||{};S.plan.dbl=sel.value;saveGame();closeModal();const p=P(sel.value);toast('Přihlášen do dvouhry i čtyřhry'+(p?' s '+p.n:''));render();}
+function doublesHomeCard(ev){const st=S.curDbl;if(!st)return '';
+ const rnd=ev.rounds[ev.cur]||[];const m=rnd.find(x=>(x.a==='me'||x.b==='me')&&!x.w);
+ if(!m)return ev.done?`<div class="card"><h3>🤝 Čtyřhra skončila</h3><div class="small">${ev.champ==='me'?'Titul!': 'Konec čtyřhry.'}</div></div>`:'';
+ const opp=m.a==='me'?m.b:m.a;const op=m.a==='me'?(m.bp||P(opp)):(m.ap||P(opp));
+ const part=P(st.partner);
+ return `<div class="card"><h3>🤝 Čtyřhra · ${esc(ev.name)}</h3>
+ <div class="small">${part?'S '+esc(part.n)+' proti ':'Proti '}<b>${esc(op&&op.n||'?')}</b> · ${evRoundName(ev,ev.cur)}</div>
+ <div class="grid2" style="margin-top:8px"><button class="btn gold" onclick="uiPlayDoubles(true)">Hrát čtyřhru</button><button class="btn ghost" onclick="uiPlayDoubles(false)">Simulovat</button></div></div>`;}
+function uiPlayDoubles(live){const ev=S.events.find(e=>e.dbl&&e.human&&!e.done);if(!ev||!S.curDbl){toast('Čtyřhra už není.');return;}
+ const rnd=ev.rounds[ev.cur]||[];const m=rnd.find(x=>(x.a==='me'||x.b==='me')&&!x.w);if(!m){toast('Teď nemáš zápas.');return;}
+ const me=ME();const part=P(S.curDbl.partner);const pair=makePair(me,part);
+ const oppP=m.a==='me'?(m.bp||makePair(P(m.b),P(m.b))):(m.ap||makePair(P(m.a),P(m.a)));
+ const opts={surf:ev.surf,bo:3,cc:ev.cc,title:ev.name,noInj:true};
+ const finish=mm=>{const won=mm.winner===0;applyResult(ev,m,won?'me':(m.a==='me'?m.b:m.a),mm.sets);
+  if(won){me.dsw=(me.dsw||0)+1;if(part)part.dsw=(part.dsw||0)+1;}else{me.dsl=(me.dsl||0)+1;}
+  simRoundAIDbl(ev);if(roundComplete(ev))advanceRound(ev);
+  me.energy=clamp(me.energy-8,0,100);saveGame();
+  toast(won?'✅ Výhra ve čtyřhře '+mm.scoreText(0):'❌ Prohra ve čtyřhře '+mm.scoreText(0));
+  if(ev.done&&ev.champ==='me')toast('🏆 Titul ve čtyřhře!');render();};
+ if(!live){const mm=new Match(pair,oppP,opts);mm.simToEnd();finish(mm);return;}
+ openMatch({opp:oppP,surf:ev.surf,bo:3,cc:ev.cc,title:ev.name+' · čtyřhra',tour:ev.name,round:evRoundName(ev,ev.cur),tier:ev.tier,ev,kind:'dbl',onEnd:(mm)=>{finish(mm);return ev.champ==='me'?`<div class="gold b">🏆 Titul ve čtyřhře!</div>`:'';},after:()=>{UI.tab='home';render();}});}
+function simRoundAIDbl(ev){for(const m of ev.rounds[ev.cur]){if(m.w||m.void)continue;if(m.a==='me'||m.b==='me')continue;if(!m.a||!m.b){m.w=m.a||m.b;continue;}const A=m.ap||P(m.a),B=m.bp||P(m.b);const q=quickMatch(A,B,ev.surf,3,ev.cc);m.w=q.w;m.sets=q.sets;}}
+
+// --- career extras ---
+function v6SettingsCard(){const on=showPlayersOn();return `<div class="card"><h3>⚙️ Nastavení zápasu</h3><div class="shop"><div class="si">👤</div><div style="flex:1"><b>Zobrazit hráče</b><div class="tiny mut">Když je vypnuto, na kurtu uvidíš jen míček, stopy odrazu, výsledkovou tabuli, statistiky a živé kurzy. Postavy tenistů zůstanou schované.</div></div><button class="btn sm ${on?'gold':''}" onclick="toggleShowPlayers(true)">${on?'Zapnuto':'Vypnuto'}</button></div></div>`;}
+function v6CareerExtra(me){let h=v6SettingsCard();const riv=rivalryList();
+ if(riv.length)h+=`<div class="card"><h3>⚔️ Rivalové</h3>${riv.slice(0,8).map(r=>`<div class="row small" style="padding:6px 0;border-bottom:1px solid rgba(255,255,255,.05)" onclick="playerModal('${r.id}')">${flag(r.p.cc)} <b style="flex:1">${esc(r.p.n)}</b><span>${r.w}–${r.l}</span> <span class="tiny mut">(${r.n} zápasů)</span></div>`).join('')}</div>`;
+ const ig=ensureIntegrity(me);if(ig){const st=isBanned(me)?(ig.banned.life?'doživotní zákaz':'zákaz na '+banWeeksLeft(me)+' týd.'):ig.reports?'spolupracuješ s '+IJT:ig.fixes?'pod dohledem':'čistý štít';
+  h+=`<div class="card"><h3>🛡️ Integrita</h3><div class="small">Pověst u ${IJT}: <b>${Math.round(ig.rep)}</b>/100 · ${st}</div><div class="tiny mut" style="margin-top:6px">Ovlivňování zápasů je ve hře volba s vážnými následky. Nahlášení pokusu pomáhá vyšetřování a zlepší ti pověst.</div></div>`;}
+ if((me.car.dblTitleList||[]).length)h+=`<div class="card"><h3>🤝 Trofeje ze čtyřhry</h3>${me.car.dblTitleList.slice().reverse().map(t=>`<div class="tiny">${t.s} · ${esc(t.name)}</div>`).join('')}</div>`;
+ return h;}
+
+// week card plan line for doubles
+(function(){const _weekCard=weekCard;weekCard=function(){let h=_weekCard();if(S.plan&&S.plan.dbl){const p=P(S.plan.dbl);if(p)h=h.replace('</div></div><button class="btn ghost sm" onclick="S.plan=null;render()">✕</button>','</div><div class="tiny cy">+ čtyřhra s '+esc(p.n)+'</div></div><button class="btn ghost sm" onclick="S.plan=null;render()">✕</button>');}
+ return h;};})();
 
 
 // ---------- boot ----------

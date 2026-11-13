@@ -72,7 +72,8 @@ const TIERS = {
         T:{32:{pts:[25,16,8,3,1,0],abs:[3600,2120,1255,730,430,260],qpts:[0,0],qabs:[150,100]}}},
  M15:  {name:'ITF M15', short:'M15', bo:3, color:'#93a1b5', rankOrd:0, qr:0, main:99999, qual:99999,
         T:{32:{pts:[15,9,5,3,1,0],abs:[2160,1272,753,438,258,156],qpts:[],qabs:[]}}},
- FIN:  {name:'ATP Finals', short:'FINALS', bo:3, color:'#ff5fa2', rankOrd:11, qr:0, main:8, qual:0, T:{8:{pts:[],sh:[]}}}
+ FIN:  {name:'ATP Finals', short:'FINALS', bo:3, color:'#ff5fa2', rankOrd:11, qr:0, main:8, qual:0, T:{8:{pts:[],sh:[]}}},
+ DC:   {name:'Davis Cup', short:'DC', bo:3, color:'#5b8cff', rankOrd:6.5, qr:0, main:99999, qual:0, T:{2:{pts:[0,0],abs:[0,0],sh:[0,0]}}}
 };
 // table for a concrete calendar event (draw-size specific)
 function tierTab(t){const tr=TIERS[t.tier];const k=Object.keys(tr.T);const d=t.draw||+k[0];return tr.T[d]||tr.T[k.reduce((a,b)=>Math.abs(b-d)<Math.abs(a-d)?b:a)];}
